@@ -547,6 +547,9 @@ public class SchedulerInfoCompiler {
 		private HDLInstance fmul32 = null;
 		private HDLInstance fdiv32 = null;
 
+    //命令の追加
+		private HDLInstance altfp_sqrt = null;
+
 		private HDLInstance fadd64 = null;
 		private HDLInstance fsub64 = null;
 		private HDLInstance fmul64 = null;
@@ -601,13 +604,22 @@ public class SchedulerInfoCompiler {
 		HDLSignal return_sig = null;
 		return_sig = returnSigTable.get(board);
 		Hashtable<String, FieldAccessItem> fieldAccessChainMap = new Hashtable<>();
+		ArrayList<SchedulerItem> items = new ArrayList<SchedulerItem>();
 		for(SchedulerSlot slot: board.getSlots()){
 			int id = slot.getStepId();
 			for(SchedulerItem item: slot.getItems()){
+				items.add(item);
 				genExpr(board, states, resource, item, states.get(id), return_sig, paramListMap.get(board.getName()), fieldAccessChainMap, predExprMap, returnTable);
 			}
 		}
-
+		//ここからが実験。
+		/*for(int i = 0; i < items.size(); i++){
+			if(items.get(i).getOp()==synthesijer.scheduler.Op.FCOMPEQ32 || items.get(i).getOp()==synthesijer.scheduler.Op.CONV_F2D){
+				System.out.println(i+"がFCOMPEQ32!!");
+			}else{
+				genExpr(board, states, resource, items.get(i), states.get(i), return_sig, paramListMap.get(board.getName()), fieldAccessChainMap, predExprMap, returnTable);
+			}
+		}*/
 	}
 
 	private HDLOp convOp2HDLOp(Op op){
@@ -672,7 +684,7 @@ public class SchedulerInfoCompiler {
 			case BREAK : break;
 			case CONTINUE : break;
 			case CAST : break;
-		    case PHI : ret = HDLOp.PHI; break;
+		  case PHI : ret = HDLOp.PHI; break;
 			case UNDEFINED : break;
 		    default: {
 				SynthesijerUtils.warn("Using undefined Op in SchedulerInfoCompiler::convOp2HDLOp: " + op);
@@ -697,6 +709,7 @@ public class SchedulerInfoCompiler {
 	}
 
 	private void genExpr(SchedulerBoard board, Hashtable<Integer, SequencerState> states, HardwareResource resource, SchedulerItem item, SequencerState state, HDLSignal return_sig, ArrayList<Pair> paramList, Hashtable<String, FieldAccessItem> fieldAccessChainMap, Hashtable<SchedulerItem, HDLExpr> predExprMap, Hashtable<Integer, SequencerState> returnTable){
+		System.out.println("いーえっくすぴーあーる"+item.getOp());
 		switch(item.getOp()){
 			case METHOD_ENTRY:{
 				if(paramList != null){
@@ -1095,6 +1108,8 @@ public class SchedulerInfoCompiler {
 			}
 			case FADD32 :
 			case FSUB32 :
+			//命令の追加
+			case ALTFP_SQRT :
 			case FMUL32 :
 			case FDIV32 :
 			case FADD64 :
@@ -1105,7 +1120,6 @@ public class SchedulerInfoCompiler {
 				Operand[] arg = item.getSrcOperand();
 				HDLInstance inst = getOperationUnit(item.getOp(), resource, board.getName());
 				inst.getSignalForPort("a").setAssign(state, 0, convOperandToHDLExpr(item, arg[0]));
-				inst.getSignalForPort("b").setAssign(state, 0, convOperandToHDLExpr(item, arg[1]));
 				inst.getSignalForPort("nd").setAssign(state, 0, HDLPreDefinedConstant.HIGH);
 				inst.getSignalForPort("nd").setDefaultValue(HDLPreDefinedConstant.LOW);
 				HDLSignal dest = (HDLSignal)convOperandToHDLExpr(item, item.getDestOperand());
@@ -1569,6 +1583,8 @@ public class SchedulerInfoCompiler {
 					case MOD64 :
 					case FADD32 :
 					case FSUB32 :
+					//命令の追加
+					case ALTFP_SQRT :
 					case FMUL32 :
 					case FDIV32 :
 					case FADD64 :
@@ -1724,6 +1740,11 @@ public class SchedulerInfoCompiler {
 					resource.div64.getSignalForPort("b").setResetValue(HDLUtils.newValue(1, 64));
 				}
 				return resource.div64;
+			}
+			//命令の追加
+			case ALTFP_SQRT:{
+				if(resource.altfp_sqrt == null) resource.altfp_sqrt = newInstModule("ALTFP_SQRT", "u_synthesijer_altfp_sqrt" + "_" + name);
+				return resource.altfp_sqrt;
 			}
 			case FADD32:{
 				if(resource.fadd32 == null) resource.fadd32 = newInstModule("FADD32", "u_synthesijer_fadd32" + "_" + name);

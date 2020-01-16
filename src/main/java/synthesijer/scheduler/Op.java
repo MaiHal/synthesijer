@@ -5,6 +5,8 @@ import synthesijer.ast.type.PrimitiveTypeKind;
 
 public enum Op {
 
+  //命令の追加
+	ALTFP_SQRT(1),
 	METHOD_ENTRY(true),
 	METHOD_EXIT,
 	ASSIGN,
@@ -161,15 +163,17 @@ public enum Op {
 	}
 
 	public static Op get(synthesijer.ast.Op o, Operand lhs, Operand rhs){
+		System.out.println("オペレーション: "+o);
 		switch(o){
 			case PLUS: {
-				if(isDouble(lhs) || isDouble(rhs)) return FADD64;
-				else if(isFloat(lhs) || isFloat(rhs)) return FADD32;
+				if(isDouble(lhs) || isDouble(rhs)) return ALTFP_SQRT;
+				else if(isFloat(lhs) || isFloat(rhs)) return ALTFP_SQRT;
 				else return ADD;
 			}
 			case MINUS: {
-				if(isDouble(lhs) || isDouble(rhs)) return FSUB64;
-				else if(isFloat(lhs) || isFloat(rhs)) return FSUB32;
+				//ここは直してね
+				if(isDouble(lhs) || isDouble(rhs)) return ALTFP_SQRT;
+				else if(isFloat(lhs) || isFloat(rhs)) return ALTFP_SQRT;
 				else return SUB;
 			}
 			case MUL: {
@@ -179,9 +183,9 @@ public enum Op {
 				else return MUL32;
 			}
 			case DIV: {
-				if(isDouble(lhs) || isDouble(rhs)) return FDIV64;
-				if(isFloat(lhs) || isFloat(rhs)) return FDIV32;
-				if(isLong(lhs) || isLong(rhs)) return DIV64;
+				if(isDouble(lhs) || isDouble(rhs)) return ALTFP_SQRT;
+				if(isFloat(lhs) || isFloat(rhs)) return ALTFP_SQRT;
+				if(isLong(lhs) || isLong(rhs)) return ALTFP_SQRT;
 				else return DIV32;
 			}
 			case MOD: {
@@ -222,8 +226,8 @@ public enum Op {
 				else return ARITH_RSHIFT32;
 			}
 			case COMPEQ:{
-				if(isDouble(lhs) || isDouble(rhs)) return FCOMPEQ64;
-				else if(isFloat(lhs) || isFloat(rhs)) return FCOMPEQ32;
+				if(isDouble(lhs) || isDouble(rhs)) return ALTFP_SQRT;
+				else if(isFloat(lhs) || isFloat(rhs)) return ALTFP_SQRT;
 				else return COMPEQ;
 			}
 			case NEQ:{
@@ -232,8 +236,8 @@ public enum Op {
 				else return NEQ;
 			}
 			case GT:{
-				if(isDouble(lhs) || isDouble(rhs)) return FGT64;
-				else if(isFloat(lhs) || isFloat(rhs)) return FGT32;
+				if(isDouble(lhs) || isDouble(rhs)) return ALTFP_SQRT;
+				else if(isFloat(lhs) || isFloat(rhs)) return ALTFP_SQRT;
 				else return GT;
 			}
 			case LT:{
@@ -351,6 +355,8 @@ public enum Op {
 			case "COND" : return COND;
 			case "FADD32" : return FADD32;
 			case "FSUB32" : return FSUB32;
+			//命令の追加
+			case "ALTFP_SQRT" : return ALTFP_SQRT;
 			case "FMUL32" : return FMUL32;
 			case "FDIV32" : return FDIV32;
 			case "FADD64" : return FADD64;

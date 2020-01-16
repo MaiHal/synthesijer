@@ -48,7 +48,7 @@ public class GenerateVHDLDefVisitor implements HDLTreeVisitor{
 		if(o.getSubModule().getParameters().length > 0){
 			genGenericList(dest, offset+2, o.getSubModule().getParameters());
 		}
-		//genPortList(dest, offset+2, o.getSubModule().getPorts(), (o.getSubModule().getParameters().length > 0));
+		genPortList(dest, offset+2, o.getSubModule().getPorts(), (o.getSubModule().getParameters().length > 0));
 		HDLUtils.println(dest, offset, String.format("end component %s;", o.getSubModule().getName()));
 	}
 

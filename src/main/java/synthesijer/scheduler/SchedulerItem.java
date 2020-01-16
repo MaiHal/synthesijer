@@ -487,7 +487,8 @@ class TypeCastItem extends SchedulerItem {
 		} else if (isFloating(orig) == true && isFloating(target) == true) { // floating
 			// ->
 			// floating
-			op = isFloat(orig) ? Op.CONV_F2D : Op.CONV_D2F;
+			//op = isFloat(orig) ? Op.CONV_F2D : Op.CONV_D2F;
+			op = isFloat(orig) ? Op.ALTFP_SQRT : Op.CONV_D2F;
 		} else {
 			op = Op.CAST;
 		}

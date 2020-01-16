@@ -40,6 +40,8 @@ import synthesijer.lib.FMUL32;
 import synthesijer.lib.FMUL64;
 import synthesijer.lib.FSUB32;
 import synthesijer.lib.FSUB64;
+//命令の追加
+import synthesijer.lib.ALTFP_SQRT;
 import synthesijer.lib.INPUT1;
 import synthesijer.lib.INPUT16;
 import synthesijer.lib.INPUT32;
@@ -134,6 +136,7 @@ public enum Manager {
 		addHDLModule("FSUB32", null, new FSUB32(), false);
 		addHDLModule("FMUL32", null, new FMUL32(), false);
 		addHDLModule("FDIV32", null, new FDIV32(), false);
+		addHDLModule("ALTFP_SQRT", null, new ALTFP_SQRT(), false);
 		// floating 64-bit
 		addHDLModule("FADD64", null, new FADD64(), false);
 		addHDLModule("FSUB64", null, new FSUB64(), false);
