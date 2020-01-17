@@ -57,6 +57,7 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 	}
 
 	private void genPortMap(HDLInstance o){
+		// インスタンス部のportmap文字列作成
 		HDLUtils.println(dest, offset, String.format("port map("));
 		String sep = "";
 		for(HDLInstance.PortPair pair: o.getPairs()){
@@ -67,6 +68,7 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 					SynthesijerUtils.warn(o.getModule().getName() + " does not have system clock, but sub-module requires system clock");
 					SynthesijerUtils.warn("system clock of sub-module is remained as open, so the sub-module will not work well.");
 				}else{
+					// clkのport
 					HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), o.getModule().getSysClkPairItem().getName()));
 				}
 			}else if(o.getSubModule().getSysResetPairItem() != null && pair.port.getName().equals(o.getSubModule().getSysResetPairItem().getName())){
@@ -75,9 +77,11 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 					SynthesijerUtils.warn(o.getModule().getName() + " does not have system reset, but sub-module requires system reset");
 					SynthesijerUtils.warn("system reset of sub-module is remained as open, so the sub-module will not work well.");
 				}else{
+					// resetのport
 					HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), o.getModule().getSysResetPairItem().getName()));
 				}
 			}else{
+				// その他のport
 				HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), pair.item.getName()));
 			}
 			sep = "," + Constant.BR;
@@ -88,6 +92,7 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 
 	@Override
 	public void visitHDLInstance(HDLInstance o) {
+		// インスタンス部の文字列作成
 		HDLUtils.println(dest, offset, String.format("inst_%s : %s", o.getName(), o.getSubModule().getName()));
 		if(o.getSubModule().getParameters().length > 0){
 			genGenericMap(o);
@@ -134,14 +139,14 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 			offset += 2;
 			s.accept(this);
 			offset -= 2;
-		}
+		}*/
 		HDLUtils.nl(dest);
+		// インスタンス生成とportmap出力の呼び出し元
 		for(HDLInstance i: o.getModuleInstances()){
 			offset += 2;
 			i.accept(this);
 			offset -= 2;
 		}
-		HDLUtils.nl(dest);*/
 		HDLUtils.println(dest, offset, String.format("end RTL;"));
 	}
 
@@ -151,9 +156,9 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 		if(o.getDir() == HDLPort.DIR.INOUT){
 			return;
 		}else if(o.isOutput()){
-			//HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getName(), o.getSignal().getName()));
+			HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getName(), o.getSignal().getName()));
 		}else{
-			//HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getSignal().getName(), o.getName()));
+			HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getSignal().getName(), o.getName()));
 		}
 		o.getSignal().accept(this);
 	}

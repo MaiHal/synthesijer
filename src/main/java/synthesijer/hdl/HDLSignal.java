@@ -82,6 +82,10 @@ public class HDLSignal implements HDLTree, HDLExpr, HDLVariable, HDLPortPairItem
 		return kind == ResourceKind.REGISTER;
 	}
 
+	public boolean isWire(){
+		return kind == ResourceKind.WIRE;		
+	}
+
 	public HDLModule getModule(){
 		return module;
 	}

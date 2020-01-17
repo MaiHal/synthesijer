@@ -1756,7 +1756,7 @@ public class SchedulerInfoCompiler {
 			}
 			//命令の追加
 			case ALTFP_SQRT:{
-				if(resource.altfp_sqrt == null) resource.altfp_sqrt = newInstModule("ALTFP_SQRT", "u_synthesijer_altfp_sqrt" + "_" + name);
+				if(resource.altfp_sqrt == null) resource.altfp_sqrt = newInstModule("ALTFP_SQRT", "altfp_sqrt");
 				return resource.altfp_sqrt;
 			}
 			case FADD32:{
