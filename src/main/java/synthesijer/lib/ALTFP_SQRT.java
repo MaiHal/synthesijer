@@ -7,16 +7,13 @@ import synthesijer.hdl.HDLPrimitiveType;
 
 public class ALTFP_SQRT extends HDLModule{
 
-	public float a;
+	public float data;
 	public float result;
 
 	public ALTFP_SQRT(){
-		super("synthesijer_alt_sqrt", "clk", "reset");
-		newPort("a",      DIR.IN,  HDLPrimitiveType.genVectorType(32));
-		newPort("b",      DIR.IN,  HDLPrimitiveType.genVectorType(32));
-		newPort("nd",     DIR.IN,  HDLPrimitiveType.genBitType());
+		super("alt_sqrt", "clock");
+		newPort("data",      DIR.IN,  HDLPrimitiveType.genVectorType(32));
 		newPort("result", DIR.OUT, HDLPrimitiveType.genVectorType(32));
-		newPort("valid",  DIR.OUT, HDLPrimitiveType.genBitType());
 	}
 
 }

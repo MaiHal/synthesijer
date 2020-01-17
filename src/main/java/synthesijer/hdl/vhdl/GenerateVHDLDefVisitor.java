@@ -163,8 +163,6 @@ public class GenerateVHDLDefVisitor implements HDLTreeVisitor{
 			offset += 2;
 			for(HDLSignal s: o.getSignals()){ s.accept(this); }
 			offset -= 2;
-			HDLUtils.println(dest, offset, String.format("end RTL;"));
-			HDLUtils.nl(dest);
 			HDLUtils.nl(dest);
 	}
 

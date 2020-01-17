@@ -108,8 +108,8 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 		o.accept(new GenerateVHDLDefVisitor(dest, offset));
 
 		// architecture body
-		/*HDLUtils.println(dest, offset, String.format("begin"));
-		HDLUtils.nl(dest);
+		HDLUtils.println(dest, offset, String.format("begin"));
+		/*HDLUtils.nl(dest);
 		for(HDLPort p: o.getPorts()){
 			offset += 2;
 			p.accept(this);
@@ -142,7 +142,7 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 			offset -= 2;
 		}
 		HDLUtils.nl(dest);*/
-		//HDLUtils.println(dest, offset, String.format("end RTL;"));
+		HDLUtils.println(dest, offset, String.format("end RTL;"));
 	}
 
 	@Override

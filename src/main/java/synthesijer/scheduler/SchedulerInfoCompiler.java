@@ -1110,6 +1110,15 @@ public class SchedulerInfoCompiler {
 			case FSUB32 :
 			//命令の追加
 			case ALTFP_SQRT :
+			{
+				Operand[] arg = item.getSrcOperand();
+				HDLInstance inst = getOperationUnit(item.getOp(), resource, board.getName());
+				inst.getSignalForPort("data").setAssign(state, 0, convOperandToHDLExpr(item, arg[0]));
+				HDLSignal dest = (HDLSignal)convOperandToHDLExpr(item, item.getDestOperand());
+				dest.setAssign(state, inst.getSignalForPort("result"));
+				predExprMap.put(item, inst.getSignalForPort("result"));
+				break;
+			}
 			case FMUL32 :
 			case FDIV32 :
 			case FADD64 :
@@ -1710,8 +1719,12 @@ public class SchedulerInfoCompiler {
 	private HDLInstance newInstModule(String mName, String uName){
 		Manager.SynthesijerModuleInfo info = Manager.INSTANCE.searchHDLModuleInfo(mName);
 		HDLInstance inst = hm.newModuleInstance(info.getHDLModule(), uName);
-		inst.getSignalForPort("clk").setAssign(null, hm.getSysClk().getSignal());
-		inst.getSignalForPort("reset").setAssign(null, hm.getSysReset().getSignal());
+		if(mName.equals("ALTFP_SQRT")){
+			inst.getSignalForPort("clock").setAssign(null, hm.getSysClk().getSignal());
+		}else{
+			inst.getSignalForPort("clk").setAssign(null, hm.getSysClk().getSignal());
+			inst.getSignalForPort("reset").setAssign(null, hm.getSysReset().getSignal());
+		}
 		return inst;
 	}
 
