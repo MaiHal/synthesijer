@@ -79,7 +79,7 @@ public class GenerateVHDLDefVisitor implements HDLTreeVisitor{
 		HDLUtils.println(dest, offset, "port (");
 		String sep = "";
 		for(HDLPort p: ports){
-			//p.accept(new GenerateVHDLDefVisitor(dest, offset+2));
+			//p.accept(new GenerateVHDLDefVisitor(dest, offset+2)); 元からコメントアウト
 			dest.print(sep);
 			HDLUtils.print(dest, offset+2, String.format("%s : %s %s", p.getName(), p.getDir().getVHDL(), ((HDLPrimitiveType)p.getType()).getVHDL(paramFlag)));
 			sep = ";" + Constant.BR;
@@ -93,7 +93,7 @@ public class GenerateVHDLDefVisitor implements HDLTreeVisitor{
 		String sep = "";
 		for(HDLParameter p: params){
 			dest.print(sep);
-			//p.accept(new GenerateVHDLDefVisitor(dest, offset+2));
+			//p.accept(new GenerateVHDLDefVisitor(dest, offset+2)); 元からコメントアウト
 			HDLUtils.print(dest, offset+2, String.format("%s : %s := %s",
 					p.getName(),
 					((HDLPrimitiveType)p.getType()).getVHDL(),
@@ -175,7 +175,7 @@ public class GenerateVHDLDefVisitor implements HDLTreeVisitor{
 
 	@Override
 	public void visitHDLParameter(HDLParameter o) {
-		//HDLUtils.print(dest, offset, String.format("%s : %s := %s", o.getName(), o.getType().getVHDL(), o.getDefaultValue().getVHDL()));
+		HDLUtils.print(dest, offset, String.format("%s : %s := %s", o.getName(), o.getType().getVHDL(), o.getDefaultValue().getVHDL()));
 	}
 
 	@Override
