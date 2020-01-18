@@ -166,14 +166,14 @@ public enum Op {
 		System.out.println("オペレーション: "+o);
 		switch(o){
 			case PLUS: {
-				if(isDouble(lhs) || isDouble(rhs)) return ALTFP_SQRT;
-				else if(isFloat(lhs) || isFloat(rhs)) return ALTFP_SQRT;
+				if(isDouble(lhs) || isDouble(rhs)) return FADD64;
+				else if(isFloat(lhs) || isFloat(rhs)) return FADD32;
 				else return ADD;
 			}
 			case MINUS: {
 				//ここは直してね
-				if(isDouble(lhs) || isDouble(rhs)) return ALTFP_SQRT;
-				else if(isFloat(lhs) || isFloat(rhs)) return ALTFP_SQRT;
+				if(isDouble(lhs) || isDouble(rhs)) return FSUB32;
+				else if(isFloat(lhs) || isFloat(rhs)) return FSUB64;
 				else return SUB;
 			}
 			case MUL: {
@@ -183,9 +183,9 @@ public enum Op {
 				else return MUL32;
 			}
 			case DIV: {
-				if(isDouble(lhs) || isDouble(rhs)) return ALTFP_SQRT;
-				if(isFloat(lhs) || isFloat(rhs)) return ALTFP_SQRT;
-				if(isLong(lhs) || isLong(rhs)) return ALTFP_SQRT;
+				if(isDouble(lhs) || isDouble(rhs)) return FDIV64;
+				if(isFloat(lhs) || isFloat(rhs)) return FDIV32;
+				if(isLong(lhs) || isLong(rhs)) return DIV64;
 				else return DIV32;
 			}
 			case MOD: {
@@ -226,8 +226,8 @@ public enum Op {
 				else return ARITH_RSHIFT32;
 			}
 			case COMPEQ:{
-				if(isDouble(lhs) || isDouble(rhs)) return ALTFP_SQRT;
-				else if(isFloat(lhs) || isFloat(rhs)) return ALTFP_SQRT;
+				if(isDouble(lhs) || isDouble(rhs)) return FCOMPEQ64;
+				else if(isFloat(lhs) || isFloat(rhs)) return FCOMPEQ32;
 				else return COMPEQ;
 			}
 			case NEQ:{
@@ -236,8 +236,8 @@ public enum Op {
 				else return NEQ;
 			}
 			case GT:{
-				if(isDouble(lhs) || isDouble(rhs)) return ALTFP_SQRT;
-				else if(isFloat(lhs) || isFloat(rhs)) return ALTFP_SQRT;
+				if(isDouble(lhs) || isDouble(rhs)) return FGT64;
+				else if(isFloat(lhs) || isFloat(rhs)) return FGT32;
 				else return GT;
 			}
 			case LT:{

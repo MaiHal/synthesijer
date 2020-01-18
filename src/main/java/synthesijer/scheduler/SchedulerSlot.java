@@ -11,7 +11,7 @@ public class SchedulerSlot {
 	 * container of items.
 	 * the index in this array corresponds to computation step. 
 	 */
-	private ArrayList<SchedulerItem> items = new ArrayList<>();
+	public ArrayList<SchedulerItem> items = new ArrayList<>();
 
 	public SchedulerSlot(int id){
 		this.stepId = id;

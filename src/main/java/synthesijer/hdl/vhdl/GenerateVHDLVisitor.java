@@ -113,34 +113,42 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 		o.accept(new GenerateVHDLDefVisitor(dest, offset));
 
 		// architecture body
+		/*
+		// ここが必要かも。
 		HDLUtils.println(dest, offset, String.format("begin"));
-		/*HDLUtils.nl(dest);
+		HDLUtils.nl(dest);
 		for(HDLPort p: o.getPorts()){
 			offset += 2;
 			p.accept(this);
 			offset -= 2;
 		}
-		HDLUtils.nl(dest);
+		HDLUtils.nl(dest);*/
+		/*
+		// tmp signalに代入してる
 		HDLUtils.println(dest, offset+2, "-- expressions");
 		for(HDLExpr expr : o.getExprs()){
 			offset += 2;
 			expr.accept(this);
 			offset -= 2;
 		}
-		HDLUtils.nl(dest);
+		HDLUtils.nl(dest);*/
+		/*
+		// sequencersだ
 		HDLUtils.println(dest, offset+2, "-- sequencers");
 		for(HDLSequencer m: o.getSequencers()){
 			offset += 2;
 			m.accept(this);
 			offset -= 2;
 		}
-		HDLUtils.nl(dest);
+		HDLUtils.nl(dest);*/
+		/*
+		//色々代入
 		for(HDLSignal s: o.getSignals()){
 			offset += 2;
 			s.accept(this);
 			offset -= 2;
-		}*/
-		HDLUtils.nl(dest);
+		}
+		HDLUtils.nl(dest);*/
 		// インスタンス生成とportmap出力の呼び出し元
 		for(HDLInstance i: o.getModuleInstances()){
 			offset += 2;

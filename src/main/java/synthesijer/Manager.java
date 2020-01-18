@@ -41,7 +41,7 @@ import synthesijer.lib.FMUL64;
 import synthesijer.lib.FSUB32;
 import synthesijer.lib.FSUB64;
 //命令の追加
-import synthesijer.lib.ALTFP_SQRT;
+import synthesijer.scheduler.ALTFP_SQRT;
 import synthesijer.lib.INPUT1;
 import synthesijer.lib.INPUT16;
 import synthesijer.lib.INPUT32;
