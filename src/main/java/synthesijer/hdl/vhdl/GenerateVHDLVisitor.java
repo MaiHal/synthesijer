@@ -111,18 +111,16 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 	public void visitHDLModule(HDLModule o) {
 		// entity
 		o.accept(new GenerateVHDLDefVisitor(dest, offset));
-
-		// architecture body
-		/*
-		// ここが必要かも。
 		HDLUtils.println(dest, offset, String.format("begin"));
+		// architecture body
+		// ここが必要かも。
 		HDLUtils.nl(dest);
 		for(HDLPort p: o.getPorts()){
 			offset += 2;
 			p.accept(this);
 			offset -= 2;
 		}
-		HDLUtils.nl(dest);*/
+		HDLUtils.nl(dest);
 		/*
 		// tmp signalに代入してる
 		HDLUtils.println(dest, offset+2, "-- expressions");
@@ -168,7 +166,8 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 		}else{
 			HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getSignal().getName(), o.getName()));
 		}
-		o.getSignal().accept(this);
+		//ここはクロック考慮してから。
+		//o.getSignal().accept(this);
 	}
 
 	@Override
