@@ -195,7 +195,7 @@ public class GenerateVHDLDefVisitor implements HDLTreeVisitor{
 				// signal部の出力
 				HDLUtils.println(dest, offset, s);
 			}
-			if(o.isWire() && !(o.getName()).contains("clock")){
+			if(o.isWire()){
 				for(String in : instnames){
 					if((o.getName()).contains(in)){
 						s = String.format("signal %s : %s;", o.getName(), o.getType().getVHDL());
