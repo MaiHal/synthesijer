@@ -80,18 +80,13 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 					// resetのport
 					HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), o.getModule().getSysResetPairItem().getName()));
 				}
-			}else if(pair.port.getName().contains("data")){
-				// target port to connect is system reset, the port should be connected system reset in this module directly.
-				if(o.getModule().getSysResetPairItem() == null){
-					SynthesijerUtils.warn(o.getModule().getName() + " does not have system reset, but sub-module requires system reset");
-					SynthesijerUtils.warn("system reset of sub-module is remained as open, so the sub-module will not work well.");
-				}else{
-					// resetのport
-					HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), "main_a_0000"));
-				}
 			}else{
+				if(pair.port.getName().equals("data")){
+					HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), GenerateVHDLDefVisitor.varSignals.get(0).getName()));
+				}else{
 				// その他のport
-				HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), pair.item.getName()));
+					HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), pair.item.getName()));
+				}
 			}
 			sep = "," + Constant.BR;
 		}
