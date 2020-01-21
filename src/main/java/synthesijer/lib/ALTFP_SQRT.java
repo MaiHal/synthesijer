@@ -36,7 +36,7 @@ public class ALTFP_SQRT extends HDLModule{
 	);
 
 	public ALTFP_SQRT(){
-		super("alt_sqrt", "clock");
+		super("altfp_sqrt", "clock");
 		newPort("data",      DIR.IN,  HDLPrimitiveType.genVectorType(32));
 		newPort("result", DIR.OUT, HDLPrimitiveType.genVectorType(32));
 	}

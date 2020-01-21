@@ -26,8 +26,9 @@ public class GenerateVHDLDefVisitor implements HDLTreeVisitor{
 
 	private PrintWriter dest;
 	private int offset;
-	public ArrayList<String> instnames = new ArrayList<>();
+	public static ArrayList<String> compNames = new ArrayList<>();
 	public static ArrayList<HDLSignal> varSignals = new ArrayList<>();
+	public static ArrayList<HDLSignal> resSignals = new ArrayList<>();
 	
 	private HashMap<HDLUserDefinedType, Boolean> definedType = new HashMap<>();
 
@@ -52,7 +53,7 @@ public class GenerateVHDLDefVisitor implements HDLTreeVisitor{
 		}
 		genPortList(dest, offset+2, o.getSubModule().getPorts(), (o.getSubModule().getParameters().length > 0));
 		HDLUtils.println(dest, offset, String.format("end component %s;", o.getSubModule().getName()));
-		instnames.add(o.getName());
+		compNames.add(o.getSubModule().getName());
 	}
 
 	@Override
@@ -199,6 +200,7 @@ public class GenerateVHDLDefVisitor implements HDLTreeVisitor{
 			}
 			if(o.isWire()){
 				s = String.format("signal %s : %s;", o.getName(), o.getType().getVHDL());
+				addResSignal(o);
 				// signal部の出力
 				HDLUtils.println(dest, offset, s);
 			}
@@ -216,6 +218,15 @@ public class GenerateVHDLDefVisitor implements HDLTreeVisitor{
 		if(1 < s.length){
 			if(!("returnbusyexprreqmethod".contains(s[1]))){
 				varSignals.add(o);
+			}
+		}
+	}
+
+	public void addResSignal(HDLSignal o){
+		String s = o.getName();
+		for(String cn : compNames){
+			if(s.contains(cn) && s.contains("result")){
+				resSignals.add(o);
 			}
 		}
 	}

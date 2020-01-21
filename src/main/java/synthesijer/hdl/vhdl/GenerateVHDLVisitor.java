@@ -117,7 +117,6 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 		o.accept(new GenerateVHDLDefVisitor(dest, offset));
 		HDLUtils.println(dest, offset, String.format("begin"));
 		// architecture body
-		// ここが必要かも。
 		HDLUtils.nl(dest);
 		for(HDLPort p: o.getPorts()){
 			offset += 2;
@@ -166,7 +165,13 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 		if(o.getDir() == HDLPort.DIR.INOUT){
 			return;
 		}else if(o.isOutput()){
-			HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getName(), o.getSignal().getName()));
+			for(HDLSignal res : GenerateVHDLDefVisitor.resSignals){
+				if(o.getType().isEqual(res.getType())){
+					HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getName(), res.getName()));
+				}else{
+					HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getName(), o.getSignal().getName()));
+				}
+			}
 		}else{
 			HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getSignal().getName(), o.getName()));
 		}
