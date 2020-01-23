@@ -172,8 +172,8 @@ public enum Op {
 			}
 			case MINUS: {
 				//ここは直してね
-				if(isDouble(lhs) || isDouble(rhs)) return FSUB32;
-				else if(isFloat(lhs) || isFloat(rhs)) return FSUB64;
+				if(isDouble(lhs) || isDouble(rhs)) return FSUB64;
+				else if(isFloat(lhs) || isFloat(rhs)) return FSUB32;
 				else return SUB;
 			}
 			case MUL: {
