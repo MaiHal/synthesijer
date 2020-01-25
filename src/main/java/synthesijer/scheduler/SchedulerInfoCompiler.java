@@ -631,14 +631,6 @@ public class SchedulerInfoCompiler {
 				genExpr(board, states, resource, item, states.get(id), return_sig, paramListMap.get(board.getName()), fieldAccessChainMap, predExprMap, returnTable);
 			}
 		}
-		//ここからが実験。
-		/*for(int i = 0; i < items.size(); i++){
-			if(items.get(i).getOp()==synthesijer.scheduler.Op.FCOMPEQ32 || items.get(i).getOp()==synthesijer.scheduler.Op.CONV_F2D){
-				System.out.println(i+"がFCOMPEQ32!!");
-			}else{
-				genExpr(board, states, resource, items.get(i), states.get(i), return_sig, paramListMap.get(board.getName()), fieldAccessChainMap, predExprMap, returnTable);
-			}
-		}*/
 	}
 
 	private HDLOp convOp2HDLOp(Op op){
@@ -948,14 +940,14 @@ public class SchedulerInfoCompiler {
 			case CALL :{
 				MethodInvokeItem item0 = (MethodInvokeItem)item;
 				Operand[] params = item0.getSrcOperand();
-				//System.out.println(item0.getSrcOperand().length);
-				//for(Operand param: params) System.out.println("Parameter : " + param.toString());
+				//System.out.println(item0.getSrcOperand().length); //元からコメントアウト
+				//for(Operand param: params) System.out.println("Parameter : " + param.toString()); //元からコメントアウト
 				ArrayList<Pair> list = getMethodParamPairList(item0.name);
 				for(int i = 0; i < params.length; i++){
 					HDLSignal t = list.get(i).local;
 					HDLExpr s = convOperandToHDLExpr(item, params[i]);
 					t.setAssign(state.getTransitions().get(0).getDestState(), 0, s);  // should set in ***_body
-					//t.setAssign(state, 0, s);
+					//t.setAssign(state, 0, s); //元からコメントアウト
 				}
 				if(item0.getDestOperand().getType() != PrimitiveTypeKind.VOID){
 					HDLSignal dest = (HDLSignal)convOperandToHDLExpr(item, item0.getDestOperand());
@@ -1423,8 +1415,6 @@ public class SchedulerInfoCompiler {
 		HDLVariable busy_port_sig = null, req_flag = null, req_flag_d = null, req_flag_edge = null;
 		HDLInstance call_stack = hm.getModuleInstance(board.getName() + "_call_stack_memory");
 
-		int c = 0;
-
 		if(board.isAuto() == false){
 			req_flag = varTable.get(board.getName() + "_req_flag");
 			busy_port_sig = varTable.get(board.getName() + "_busy");
@@ -1448,12 +1438,35 @@ public class SchedulerInfoCompiler {
 			states.get(slot.getStepId()).addStateTransit(states.get(slot.getNextStep()[0]));
 		}
 
+		int c = 0;
+		Hashtable<String, VariableOperand> vOHash = new Hashtable<String, VariableOperand>();
+		VariableOperand altfp_sqrt_dest = null;
+		Operand[] altfp_sqrt_src = new Operand[2];
+		SchedulerSlot tmp_slot = null;
+
 		for(SchedulerSlot slot: board.getSlots()){
 			for(SchedulerItem item: slot.getItems()){
 				SequencerState s = states.get(item.getStepId());
 				ArrayList<Op> tmpOpList = new ArrayList<Op>();
+				Operand[] srcs = item.getSrcOperand();
+				if (item.getDestOperand() != null){
+					vOHash.put(item.destInfo(), item.getDestOperand());
+				}
+				if(srcs != null){
+					System.out.print("【itemの情報】op: "+item.getOp()+", operand src:"+srcs[0]);
+					if(1 < srcs.length){
+						System.out.print(", "+srcs[1]);
+					}
+					System.out.println(", dest:"+item.destInfo());
+				}
 				if(c < ALTFP_SQRT.op.size()-1){
 					if(item.getOp() == ALTFP_SQRT.op.get(c)){
+						if(c == 0){
+							altfp_sqrt_src = item.getSrcOperand();
+						}
+						if(c == 15){
+							tmp_slot = slot;
+						}
 						slot.items.remove(0);
 						c++;
 					}else{
@@ -1461,13 +1474,17 @@ public class SchedulerInfoCompiler {
 					}
 				}else if(c == ALTFP_SQRT.op.size()-1){
 					if(item.getOp() == ALTFP_SQRT.op.get(c)){
-						item.overwriteOp(Op.ALTFP_SQRT);
+						if(vOHash.containsKey(item.srcInfo())){
+							altfp_sqrt_dest = vOHash.get(item.srcInfo());
+						}
+						if(tmp_slot != null){
+							tmp_slot.insertItem(new SchedulerItem(board, Op.ALTFP_SQRT, altfp_sqrt_src, altfp_sqrt_dest), tmp_slot.getItems().length);
+						}
 						c++;
 					}else{
 						c = 0;
 					}
 				}else{
-					c = 0;
 					switch(item.getOp()){
 						case METHOD_EXIT: {
 							HDLExpr unlock = null;

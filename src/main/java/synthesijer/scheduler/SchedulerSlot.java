@@ -36,6 +36,12 @@ public class SchedulerSlot {
 		item.setSlot(this);
 		return item;
 	}
+
+	public SchedulerItem insertItem(SchedulerItem item, int i){
+		items.add(i, item);
+		item.setSlot(this);
+		return item;
+	}
 	
 	public int getStepId(){
 		return this.stepId;

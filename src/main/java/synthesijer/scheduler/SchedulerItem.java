@@ -156,7 +156,7 @@ public class SchedulerItem {
 		this.dest = v;
 	}
 
-	private String srcInfo() {
+	public String srcInfo() {
 		if (src == null)
 			return "";
 		String s = "";
@@ -170,7 +170,11 @@ public class SchedulerItem {
 		return s;
 	}
 
-	private String destInfo() {
+	public Operand srcVariableOpernad(){
+		return src[0];
+	}
+
+	public String destInfo() {
 		if (dest == null)
 			return "";
 		return dest.info();

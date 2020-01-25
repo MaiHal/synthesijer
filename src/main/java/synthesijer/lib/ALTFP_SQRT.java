@@ -29,9 +29,10 @@ public class ALTFP_SQRT extends HDLModule{
 			Op.FADD32,
 			Op.FDIV32,
 			Op.ASSIGN,
-			Op.FSUB64,
+			Op.FSUB32,
 			Op.ASSIGN,
-			Op.ASSIGN
+			Op.ASSIGN,
+			Op.RETURN
 		)
 	);
 

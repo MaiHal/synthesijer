@@ -23,7 +23,7 @@ public class HDLCombinationExpr implements HDLExpr {
         this.uid = uid;
         this.op = op;
         this.args = args;
-        System.out.println("最新のuid: "+uid+", op: "+op+", args: "+args);
+        //System.out.println("最新のuid: "+uid+", op: "+op+", args: "+args);
         for (HDLExpr expr : args) {
             if (expr == null)
                 throw new RuntimeException("An argument of HDLCombinationExpr is null.");
