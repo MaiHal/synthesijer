@@ -1468,7 +1468,8 @@ public class SchedulerInfoCompiler {
 							tmp_slot = slot;
 						}
 						slot.items.remove(0);
-						c++;
+						c += 1;
+						continue;
 					}else{
 						c = 0;
 					}
@@ -1480,234 +1481,234 @@ public class SchedulerInfoCompiler {
 						if(tmp_slot != null){
 							tmp_slot.insertItem(new SchedulerItem(board, Op.ALTFP_SQRT, altfp_sqrt_src, altfp_sqrt_dest), tmp_slot.getItems().length);
 						}
-						c++;
+						c += 1;
 					}else{
 						c = 0;
 					}
-				}else{
-					switch(item.getOp()){
-						case METHOD_EXIT: {
-							HDLExpr unlock = null;
-							HDLExpr wait_with_unlock = null;
+				}
+				//c = 0;
+				switch(item.getOp()){
+					case METHOD_EXIT: {
+						HDLExpr unlock = null;
+						HDLExpr wait_with_unlock = null;
 
-							if(board.hasWaitDependsBoard()){ // must wait for other method, such as join
-								HDLVariable flag = varTable.get(board.getWaitDependsBoardName() + "_busy");
-								wait_with_unlock = hm.newExpr(HDLOp.EQ, flag, HDLPreDefinedConstant.LOW); // the waiting method has been done.
-								unlock = wait_with_unlock;
-							}
+						if(board.hasWaitDependsBoard()){ // must wait for other method, such as join
+							HDLVariable flag = varTable.get(board.getWaitDependsBoardName() + "_busy");
+							wait_with_unlock = hm.newExpr(HDLOp.EQ, flag, HDLPreDefinedConstant.LOW); // the waiting method has been done.
+							unlock = wait_with_unlock;
+						}
 
-							if(board.hasCallStack()){
-								HDLExpr stack_bottom = hm.newExpr(HDLOp.EQ, call_stack.getSignalForPort("address_b"), HDLPreDefinedConstant.INTEGER_ZERO);
-								// unlock is updated with this stack bottom condition
-								unlock = (unlock == null) ? stack_bottom : hm.newExpr(HDLOp.AND, stack_bottom, unlock);
-							}
+						if(board.hasCallStack()){
+							HDLExpr stack_bottom = hm.newExpr(HDLOp.EQ, call_stack.getSignalForPort("address_b"), HDLPreDefinedConstant.INTEGER_ZERO);
+							// unlock is updated with this stack bottom condition
+							unlock = (unlock == null) ? stack_bottom : hm.newExpr(HDLOp.AND, stack_bottom, unlock);
+						}
 
+						if(unlock != null){
+							s.addStateTransit(unlock, states.get(item.getSlot().getNextStep()[0]));
+						}else{
+							s.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
+						}
+
+						if(board.isAuto() == false){
 							if(unlock != null){
-								s.addStateTransit(unlock, states.get(item.getSlot().getNextStep()[0]));
+								busy_port_sig.setAssign(s, hm.newExpr(HDLOp.IF, unlock, HDLPreDefinedConstant.LOW, HDLPreDefinedConstant.HIGH));
 							}else{
-								s.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
+								busy_port_sig.setAssign(s, HDLPreDefinedConstant.LOW);
 							}
+						}
 
-							if(board.isAuto() == false){
-								if(unlock != null){
-									busy_port_sig.setAssign(s, hm.newExpr(HDLOp.IF, unlock, HDLPreDefinedConstant.LOW, HDLPreDefinedConstant.HIGH));
-								}else{
-									busy_port_sig.setAssign(s, HDLPreDefinedConstant.LOW);
-								}
-							}
-
-							methodIdleState = s;
-							break;
-						}
-						case METHOD_ENTRY:{
-							if(board.isAuto()){
-								s.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
-							}else{
-								s.addStateTransit(hm.newExpr(HDLOp.OR, req_flag, req_flag_d), states.get(item.getSlot().getNextStep()[0]));
-								//s.addStateTransit(req_flag, states.get(item.getSlot().getNextStep()[0]));
-								busy_port_sig.setAssign(s, hm.newExpr(HDLOp.OR, req_flag, req_flag_d));
-							}
-							methodEntryState = s;
-							break;
-						}
-						case SELECT:{
-							SelectItem item0 = (SelectItem)item;
-							for(int i = 0; i < item0.pat.length; i++){
-								HDLExpr cond = convOperandToHDLExpr(item, item0.target);
-								HDLExpr pat = convOperandToHDLExpr(item, item0.pat[i]);
-								s.addStateTransit(hm.newExpr(HDLOp.EQ, cond, pat), states.get(item.getSlot().getNextStep()[i]));
-							}
-							s.addStateTransit(states.get(item0.getSlot().getNextStep()[item0.pat.length]));
-							break;
-						}
-						case JT:{
-							HDLExpr flag = convOperandToHDLExpr(item, item.getSrcOperand()[0]);
-							s.addStateTransit(hm.newExpr(HDLOp.EQ, flag, HDLPreDefinedConstant.HIGH), states.get(item.getSlot().getNextStep()[0]));
-							s.addStateTransit(hm.newExpr(HDLOp.EQ, flag, HDLPreDefinedConstant.LOW), states.get(item.getSlot().getNextStep()[1]));
-							break;
-						}
-						case JP:
-							s.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
-							break;
-						case CALL:
-						case EXT_CALL:
-						{
-							SequencerState call_body = seq.addSequencerState(s.getStateId().getValue()+"_body", false);
-							SequencerState call_wait = seq.addSequencerState(s.getStateId().getValue()+"_wait", false);
-							MethodInvokeItem item0 = (MethodInvokeItem)item;
-							HDLVariable call_req, call_busy;
-							String flag_name;
-							if(item0.getOp() == Op.EXT_CALL){
-								HDLInstance obj = (HDLInstance)(varTable.get(item0.obj.getName()));
-								call_req = obj.getSignalForPort(item0.name + "_req");
-								call_busy = obj.getSignalForPort(item0.name + "_busy");
-								//flag_name = String.format("%s_ext_call_flag_%04d", obj.getName(), item.getStepId());
-								flag_name = String.format("%s_%s_ext_call_flag_%04d", obj.getName(), item0.name, item.getStepId());
-							}else{
-								call_req = varTable.get(item0.name + "_req_local");
-								call_busy = varTable.get(item0.name + "_busy");
-								flag_name = String.format("%s_call_flag_%04d", item0.name, item.getStepId());
-							}
-							HDLSignal flag = (HDLSignal)varTable.get(flag_name);
-							if(flag == null){
-								flag = hm.newSignal(flag_name, HDLPrimitiveType.genBitType(), HDLSignal.ResourceKind.WIRE);
-								flag.setAssign(null, hm.newExpr(HDLOp.EQ,
-										hm.newExpr(HDLOp.AND,
-												hm.newExpr(HDLOp.EQ, call_busy, HDLPreDefinedConstant.LOW),
-												hm.newExpr(HDLOp.EQ, call_req, HDLPreDefinedConstant.LOW)),
-										HDLPreDefinedConstant.HIGH));
-								varTable.put(flag_name, flag);
-							}
-
-							// when busy = '0', s -> call_body
-							// recur					
-							//					s.addStateTransit(hm.newExpr(HDLOp.EQ, call_busy, HDLPreDefinedConstant.LOW), call_body);
-							s.addStateTransit(call_body);
-
-							// call_body
-							//					call_req.setAssign(call_body, 0, HDLPreDefinedConstant.HIGH);
-							call_req.setAssign(call_body, HDLPreDefinedConstant.HIGH);
-							call_req.setDefaultValue(HDLPreDefinedConstant.LOW); // otherwise '0'
-							//					call_body.setMaxConstantDelay(1);
-							if(item0.isNoWait() == true){
-								System.out.println("no wait:" + call_req);
-								call_body.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
-							}else{
-								//System.out.println("block:" + call_req);
-								//						call_body.setStateExitFlag(flag);
-								call_body.addStateTransit(call_wait);
-								call_wait.addStateTransit(flag, states.get(item.getSlot().getNextStep()[0]));
-								//						call_wait.setStateExitFlag(flag);
-							}
-							//					call_body.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
-							if(call_stack != null && board.getName().equals(item0.name)){
-								//System.out.println("treating recursive call.");
-								HDLSignal addr = call_stack.getSignalForPort("address_b");
-								HDLSignal we = call_stack.getSignalForPort("we_b");
-								HDLSignal wdata = call_stack.getSignalForPort("din_b");
-								we.setAssign(s, HDLPreDefinedConstant.HIGH);
-								we.setDefaultValue(HDLPreDefinedConstant.LOW); // others
-								int retPoint = item.getStepId();
-								HDLValue retPointValue = new HDLValue(String.valueOf(retPoint), HDLPrimitiveType.genSignedType(16));
-								wdata.setAssign(s, retPointValue);
-								HDLExpr addr_expr = hm.newExpr(HDLOp.ADD, addr, HDLPreDefinedConstant.INTEGER_ONE);
-								addr.setAssign(s, addr_expr);
-								Enumeration<HDLVariable> preserve = callStackMap.keys();
-								while(preserve.hasMoreElements()){
-									HDLVariable src = preserve.nextElement();
-									HDLInstance inst = callStackMap.get(src);
-									HDLSignal a = inst.getSignalForPort("address_b");
-									HDLSignal w = inst.getSignalForPort("we_b");
-									HDLSignal d = inst.getSignalForPort("din_b");
-									w.setAssign(s, HDLPreDefinedConstant.HIGH);
-									w.setDefaultValue(HDLPreDefinedConstant.LOW); // others
-									d.setAssign(s, src);
-									a.setAssign(s, addr_expr);
-								}
-
-								SequencerState call_ret = seq.addSequencerState(s.getStateId().getValue()+"_ret", false);
-								call_ret.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
-								returnTable.put(retPoint, call_ret);
-							}
-
-							break;
-						}
-						case LSHIFT32 :
-						case LOGIC_RSHIFT32 :
-						case ARITH_RSHIFT32 :
-						case LSHIFT64 :
-						case LOGIC_RSHIFT64 :
-						case ARITH_RSHIFT64 :
-						case MUL32 :
-						case MUL64 :
-						case DIV32 :
-						case DIV64 :
-						case MOD32 :
-						case MOD64 :
-						case FADD32 :
-						case FSUB32 :
-						//命令の追加
-						case ALTFP_SQRT :
-						case FMUL32 :
-						case FDIV32 :
-						case FADD64 :
-						case FSUB64 :
-						case FMUL64 :
-						case FDIV64 :
-						case CONV_F2I :
-						case CONV_I2F :
-						case CONV_D2L :
-						case CONV_L2D :
-						case CONV_F2D :
-						case CONV_D2F :
-						case FLT32:
-						case FLEQ32:
-						case FGT32:
-						case FGEQ32:
-						case FCOMPEQ32:
-						case FNEQ32:
-						case FLT64:
-						case FLEQ64:
-						case FGT64:
-						case FGEQ64:
-						case FCOMPEQ64:
-						case FNEQ64:
-						{
-							s.setMaxConstantDelay(item.getOp().latency);
-							s.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
-							HDLInstance inst = getOperationUnit(item.getOp(), resource, board.getName());
-							s.setStateExitFlag(inst.getSignalForPort("valid"));
-							break;
-						}
-						case ARRAY_ACCESS:{
-							states.get(slot.getStepId()).addStateTransit(states.get(slot.getNextStep()[0]));
-							break;
-						}
-						case RETURN:{
-							states.get(slot.getStepId()).addStateTransit(states.get(slot.getNextStep()[0]));
-							break;
-						}
-						case MULTI_RETURN:{
-							// TODO
-							states.get(slot.getStepId()).addStateTransit(states.get(slot.getNextStep()[0]));
-							break;
-						}
-						default:
-						/*
-						if(slot.hasBranchOp() || slot.getNextStep().length > 1 || slot.getLatency() > 0){
-							SynthesijerUtils.warn("Undefined state transition: " + item.getOp());
-						}
-						*/
-							states.get(slot.getStepId()).addStateTransit(states.get(slot.getNextStep()[0]));
-						/*
-							if(item.isBranchOp()){
-							}else{
-							s.addStateTransit(states[item.getStepId()+1]);
-							}
-						*/
-							//s.addStateTransit(states[item.getBranchId()[0]]);
-							//s.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
+						methodIdleState = s;
+						break;
 					}
+					case METHOD_ENTRY:{
+						if(board.isAuto()){
+							s.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
+						}else{
+							s.addStateTransit(hm.newExpr(HDLOp.OR, req_flag, req_flag_d), states.get(item.getSlot().getNextStep()[0]));
+							//s.addStateTransit(req_flag, states.get(item.getSlot().getNextStep()[0]));
+							busy_port_sig.setAssign(s, hm.newExpr(HDLOp.OR, req_flag, req_flag_d));
+						}
+						methodEntryState = s;
+						break;
+					}
+					case SELECT:{
+						SelectItem item0 = (SelectItem)item;
+						for(int i = 0; i < item0.pat.length; i++){
+							HDLExpr cond = convOperandToHDLExpr(item, item0.target);
+							HDLExpr pat = convOperandToHDLExpr(item, item0.pat[i]);
+							s.addStateTransit(hm.newExpr(HDLOp.EQ, cond, pat), states.get(item.getSlot().getNextStep()[i]));
+						}
+						s.addStateTransit(states.get(item0.getSlot().getNextStep()[item0.pat.length]));
+						break;
+					}
+					case JT:{
+						HDLExpr flag = convOperandToHDLExpr(item, item.getSrcOperand()[0]);
+						s.addStateTransit(hm.newExpr(HDLOp.EQ, flag, HDLPreDefinedConstant.HIGH), states.get(item.getSlot().getNextStep()[0]));
+						s.addStateTransit(hm.newExpr(HDLOp.EQ, flag, HDLPreDefinedConstant.LOW), states.get(item.getSlot().getNextStep()[1]));
+						break;
+					}
+					case JP:
+						s.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
+						break;
+					case CALL:
+					case EXT_CALL:
+					{
+						SequencerState call_body = seq.addSequencerState(s.getStateId().getValue()+"_body", false);
+						SequencerState call_wait = seq.addSequencerState(s.getStateId().getValue()+"_wait", false);
+						MethodInvokeItem item0 = (MethodInvokeItem)item;
+						HDLVariable call_req, call_busy;
+						String flag_name;
+						if(item0.getOp() == Op.EXT_CALL){
+							HDLInstance obj = (HDLInstance)(varTable.get(item0.obj.getName()));
+							call_req = obj.getSignalForPort(item0.name + "_req");
+							call_busy = obj.getSignalForPort(item0.name + "_busy");
+							//flag_name = String.format("%s_ext_call_flag_%04d", obj.getName(), item.getStepId());
+							flag_name = String.format("%s_%s_ext_call_flag_%04d", obj.getName(), item0.name, item.getStepId());
+						}else{
+							call_req = varTable.get(item0.name + "_req_local");
+							call_busy = varTable.get(item0.name + "_busy");
+							flag_name = String.format("%s_call_flag_%04d", item0.name, item.getStepId());
+						}
+						HDLSignal flag = (HDLSignal)varTable.get(flag_name);
+						if(flag == null){
+							flag = hm.newSignal(flag_name, HDLPrimitiveType.genBitType(), HDLSignal.ResourceKind.WIRE);
+							flag.setAssign(null, hm.newExpr(HDLOp.EQ,
+									hm.newExpr(HDLOp.AND,
+											hm.newExpr(HDLOp.EQ, call_busy, HDLPreDefinedConstant.LOW),
+											hm.newExpr(HDLOp.EQ, call_req, HDLPreDefinedConstant.LOW)),
+									HDLPreDefinedConstant.HIGH));
+							varTable.put(flag_name, flag);
+						}
+
+						// when busy = '0', s -> call_body
+						// recur					
+						//					s.addStateTransit(hm.newExpr(HDLOp.EQ, call_busy, HDLPreDefinedConstant.LOW), call_body);
+						s.addStateTransit(call_body);
+
+						// call_body
+						//					call_req.setAssign(call_body, 0, HDLPreDefinedConstant.HIGH);
+						call_req.setAssign(call_body, HDLPreDefinedConstant.HIGH);
+						call_req.setDefaultValue(HDLPreDefinedConstant.LOW); // otherwise '0'
+						//					call_body.setMaxConstantDelay(1);
+						if(item0.isNoWait() == true){
+							System.out.println("no wait:" + call_req);
+							call_body.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
+						}else{
+							//System.out.println("block:" + call_req);
+							//						call_body.setStateExitFlag(flag);
+							call_body.addStateTransit(call_wait);
+							call_wait.addStateTransit(flag, states.get(item.getSlot().getNextStep()[0]));
+							//						call_wait.setStateExitFlag(flag);
+						}
+						//					call_body.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
+						if(call_stack != null && board.getName().equals(item0.name)){
+							//System.out.println("treating recursive call.");
+							HDLSignal addr = call_stack.getSignalForPort("address_b");
+							HDLSignal we = call_stack.getSignalForPort("we_b");
+							HDLSignal wdata = call_stack.getSignalForPort("din_b");
+							we.setAssign(s, HDLPreDefinedConstant.HIGH);
+							we.setDefaultValue(HDLPreDefinedConstant.LOW); // others
+							int retPoint = item.getStepId();
+							HDLValue retPointValue = new HDLValue(String.valueOf(retPoint), HDLPrimitiveType.genSignedType(16));
+							wdata.setAssign(s, retPointValue);
+							HDLExpr addr_expr = hm.newExpr(HDLOp.ADD, addr, HDLPreDefinedConstant.INTEGER_ONE);
+							addr.setAssign(s, addr_expr);
+							Enumeration<HDLVariable> preserve = callStackMap.keys();
+							while(preserve.hasMoreElements()){
+								HDLVariable src = preserve.nextElement();
+								HDLInstance inst = callStackMap.get(src);
+								HDLSignal a = inst.getSignalForPort("address_b");
+								HDLSignal w = inst.getSignalForPort("we_b");
+								HDLSignal d = inst.getSignalForPort("din_b");
+								w.setAssign(s, HDLPreDefinedConstant.HIGH);
+								w.setDefaultValue(HDLPreDefinedConstant.LOW); // others
+								d.setAssign(s, src);
+								a.setAssign(s, addr_expr);
+							}
+
+							SequencerState call_ret = seq.addSequencerState(s.getStateId().getValue()+"_ret", false);
+							call_ret.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
+							returnTable.put(retPoint, call_ret);
+						}
+
+						break;
+					}
+					case LSHIFT32 :
+					case LOGIC_RSHIFT32 :
+					case ARITH_RSHIFT32 :
+					case LSHIFT64 :
+					case LOGIC_RSHIFT64 :
+					case ARITH_RSHIFT64 :
+					case MUL32 :
+					case MUL64 :
+					case DIV32 :
+					case DIV64 :
+					case MOD32 :
+					case MOD64 :
+					case FADD32 :
+					case FSUB32 :
+					//命令の追加
+					case ALTFP_SQRT :
+					case FMUL32 :
+					case FDIV32 :
+					case FADD64 :
+					case FSUB64 :
+					case FMUL64 :
+					case FDIV64 :
+					case CONV_F2I :
+					case CONV_I2F :
+					case CONV_D2L :
+					case CONV_L2D :
+					case CONV_F2D :
+					case CONV_D2F :
+					case FLT32:
+					case FLEQ32:
+					case FGT32:
+					case FGEQ32:
+					case FCOMPEQ32:
+					case FNEQ32:
+					case FLT64:
+					case FLEQ64:
+					case FGT64:
+					case FGEQ64:
+					case FCOMPEQ64:
+					case FNEQ64:
+					{
+						s.setMaxConstantDelay(item.getOp().latency);
+						s.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
+						HDLInstance inst = getOperationUnit(item.getOp(), resource, board.getName());
+						s.setStateExitFlag(inst.getSignalForPort("valid"));
+						break;
+					}
+					case ARRAY_ACCESS:{
+						states.get(slot.getStepId()).addStateTransit(states.get(slot.getNextStep()[0]));
+						break;
+					}
+					case RETURN:{
+						states.get(slot.getStepId()).addStateTransit(states.get(slot.getNextStep()[0]));
+						break;
+					}
+					case MULTI_RETURN:{
+						// TODO
+						states.get(slot.getStepId()).addStateTransit(states.get(slot.getNextStep()[0]));
+						break;
+					}
+					default:
+					/*
+					if(slot.hasBranchOp() || slot.getNextStep().length > 1 || slot.getLatency() > 0){
+						SynthesijerUtils.warn("Undefined state transition: " + item.getOp());
+					}
+					*/
+						states.get(slot.getStepId()).addStateTransit(states.get(slot.getNextStep()[0]));
+					/*
+						if(item.isBranchOp()){
+						}else{
+						s.addStateTransit(states[item.getStepId()+1]);
+						}
+					*/
+						//s.addStateTransit(states[item.getBranchId()[0]]);
+						//s.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
 				}
 			}
 		}
