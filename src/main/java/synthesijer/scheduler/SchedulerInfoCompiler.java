@@ -1407,6 +1407,64 @@ public class SchedulerInfoCompiler {
 		return stack;
 	}
 
+	private boolean isMatchALTFP_SQRT(SchedulerBoard board){
+		int c = 0;
+		Hashtable<String, VariableOperand> vOHash = new Hashtable<String, VariableOperand>();
+		VariableOperand altfp_sqrt_dest = null;
+		Operand[] altfp_sqrt_src = new Operand[2];
+		SchedulerSlot tmp_slot = null;
+		int[] tmp_branchIDs = null;
+
+		for(SchedulerSlot slot: board.getSlots()){
+			for(SchedulerItem item: slot.getItems()){
+				ArrayList<Op> tmpOpList = new ArrayList<Op>();
+				Operand[] srcs = item.getSrcOperand(); //デバック後消す
+				// このif文は残す
+				if (item.getDestOperand() != null){
+					vOHash.put(item.destInfo(), item.getDestOperand());
+				}
+				// このif文デバック後消す
+				if(srcs != null){
+					System.out.print("【itemの情報】op: "+item.getOp()+", operand src:"+srcs[0]);
+					if(1 < srcs.length){
+						System.out.print(", "+srcs[1]);
+					}
+					System.out.println(", dest:"+item.destInfo());
+				}
+
+				if(c < ALTFP_SQRT.op.size()-1){
+					if(item.getOp() == ALTFP_SQRT.op.get(c)){
+						if(c == 0){
+							altfp_sqrt_src = item.getSrcOperand();
+						}
+						if(c == 15){
+							tmp_slot = slot;
+							tmp_branchIDs = item.getBranchId();
+						}
+						slot.items.remove(0);
+						c += 1;
+						continue;
+					}else{
+						c = 0;
+					}
+				}else if(c == ALTFP_SQRT.op.size()-1){
+					if(item.getOp() == ALTFP_SQRT.op.get(c)){
+						if(vOHash.containsKey(item.srcInfo())){
+							altfp_sqrt_dest = vOHash.get(item.srcInfo());
+						}
+						if(tmp_slot != null){
+							SchedulerItem newItem = tmp_slot.insertItem(new SchedulerItem(board, Op.ALTFP_SQRT, altfp_sqrt_src, altfp_sqrt_dest), tmp_slot.getItems().length);
+							newItem.setBranchIds(tmp_branchIDs);
+						}
+						c += 1;
+					}else{
+						c = 0;
+					}
+				}
+			}
+		}
+	}
+
 	private Hashtable<Integer, SequencerState> genStatemachine(SchedulerBoard board, HardwareResource resource, Hashtable<Integer, SequencerState> returnTable, Hashtable<HDLVariable, HDLInstance> callStackMap){
 		HDLSequencer seq = hm.newSequencer(board.getName() + "_method");
 		IdGen id = new IdGen("S");
@@ -1438,20 +1496,13 @@ public class SchedulerInfoCompiler {
 			states.get(slot.getStepId()).addStateTransit(states.get(slot.getNextStep()[0]));
 		}
 
-		int c = 0;
-		Hashtable<String, VariableOperand> vOHash = new Hashtable<String, VariableOperand>();
-		VariableOperand altfp_sqrt_dest = null;
-		Operand[] altfp_sqrt_src = new Operand[2];
-		SchedulerSlot tmp_slot = null;
+		isMatchALTFP_SQRT(board);
 
 		for(SchedulerSlot slot: board.getSlots()){
 			for(SchedulerItem item: slot.getItems()){
 				SequencerState s = states.get(item.getStepId());
-				ArrayList<Op> tmpOpList = new ArrayList<Op>();
-				Operand[] srcs = item.getSrcOperand();
-				if (item.getDestOperand() != null){
-					vOHash.put(item.destInfo(), item.getDestOperand());
-				}
+				Operand[] srcs = item.getSrcOperand(); //デバック後消す
+				// このif文デバック後消す
 				if(srcs != null){
 					System.out.print("【itemの情報】op: "+item.getOp()+", operand src:"+srcs[0]);
 					if(1 < srcs.length){
@@ -1459,34 +1510,7 @@ public class SchedulerInfoCompiler {
 					}
 					System.out.println(", dest:"+item.destInfo());
 				}
-				if(c < ALTFP_SQRT.op.size()-1){
-					if(item.getOp() == ALTFP_SQRT.op.get(c)){
-						if(c == 0){
-							altfp_sqrt_src = item.getSrcOperand();
-						}
-						if(c == 15){
-							tmp_slot = slot;
-						}
-						slot.items.remove(0);
-						c += 1;
-						continue;
-					}else{
-						c = 0;
-					}
-				}else if(c == ALTFP_SQRT.op.size()-1){
-					if(item.getOp() == ALTFP_SQRT.op.get(c)){
-						if(vOHash.containsKey(item.srcInfo())){
-							altfp_sqrt_dest = vOHash.get(item.srcInfo());
-						}
-						if(tmp_slot != null){
-							tmp_slot.insertItem(new SchedulerItem(board, Op.ALTFP_SQRT, altfp_sqrt_src, altfp_sqrt_dest), tmp_slot.getItems().length);
-						}
-						c += 1;
-					}else{
-						c = 0;
-					}
-				}
-				//c = 0;
+
 				switch(item.getOp()){
 					case METHOD_EXIT: {
 						HDLExpr unlock = null;
@@ -1766,9 +1790,7 @@ public class SchedulerInfoCompiler {
 					a.setAssign(methodIdleState, not_stack_bottom, dec);
 				}
 			}
-
 		}
-
 		return states;
 	}
 
