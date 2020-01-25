@@ -1407,7 +1407,8 @@ public class SchedulerInfoCompiler {
 		return stack;
 	}
 
-	private boolean isMatchALTFP_SQRT(SchedulerBoard board){
+	private void replaceALTFP_SQRT(SchedulerBoard board, int startNum){
+		int id = 0;
 		int c = 0;
 		Hashtable<String, VariableOperand> vOHash = new Hashtable<String, VariableOperand>();
 		VariableOperand altfp_sqrt_dest = null;
@@ -1418,22 +1419,11 @@ public class SchedulerInfoCompiler {
 		for(SchedulerSlot slot: board.getSlots()){
 			for(SchedulerItem item: slot.getItems()){
 				ArrayList<Op> tmpOpList = new ArrayList<Op>();
-				Operand[] srcs = item.getSrcOperand(); //デバック後消す
-				// このif文は残す
 				if (item.getDestOperand() != null){
 					vOHash.put(item.destInfo(), item.getDestOperand());
 				}
-				// このif文デバック後消す
-				if(srcs != null){
-					System.out.print("【itemの情報】op: "+item.getOp()+", operand src:"+srcs[0]);
-					if(1 < srcs.length){
-						System.out.print(", "+srcs[1]);
-					}
-					System.out.println(", dest:"+item.destInfo());
-				}
-
-				if(c < ALTFP_SQRT.op.size()-1){
-					if(item.getOp() == ALTFP_SQRT.op.get(c)){
+				if(startNum <= id){
+					if(c < ALTFP_SQRT.op.size()-1){
 						if(c == 0){
 							altfp_sqrt_src = item.getSrcOperand();
 						}
@@ -1442,13 +1432,7 @@ public class SchedulerInfoCompiler {
 							tmp_branchIDs = item.getBranchId();
 						}
 						slot.items.remove(0);
-						c += 1;
-						continue;
-					}else{
-						c = 0;
-					}
-				}else if(c == ALTFP_SQRT.op.size()-1){
-					if(item.getOp() == ALTFP_SQRT.op.get(c)){
+					}else if(c == ALTFP_SQRT.op.size()-1){
 						if(vOHash.containsKey(item.srcInfo())){
 							altfp_sqrt_dest = vOHash.get(item.srcInfo());
 						}
@@ -1456,13 +1440,36 @@ public class SchedulerInfoCompiler {
 							SchedulerItem newItem = tmp_slot.insertItem(new SchedulerItem(board, Op.ALTFP_SQRT, altfp_sqrt_src, altfp_sqrt_dest), tmp_slot.getItems().length);
 							newItem.setBranchIds(tmp_branchIDs);
 						}
+					}
+					c += 1;
+				}
+				id += 1;
+			}
+		}
+	}
+
+	private int isMatchALTFP_SQRT(SchedulerBoard board){
+		int id = 0;
+		int c = 0;
+		int startNum = -1;
+
+		for(SchedulerSlot slot: board.getSlots()){
+			for(SchedulerItem item: slot.getItems()){
+				if(c <= ALTFP_SQRT.op.size()-1){
+					if(item.getOp() == ALTFP_SQRT.op.get(c)){
+						if(startNum == -1){
+							startNum = id;
+						}
 						c += 1;
 					}else{
+						startNum = -1;
 						c = 0;
 					}
 				}
+				id += 1;
 			}
 		}
+		return startNum;
 	}
 
 	private Hashtable<Integer, SequencerState> genStatemachine(SchedulerBoard board, HardwareResource resource, Hashtable<Integer, SequencerState> returnTable, Hashtable<HDLVariable, HDLInstance> callStackMap){
@@ -1496,7 +1503,11 @@ public class SchedulerInfoCompiler {
 			states.get(slot.getStepId()).addStateTransit(states.get(slot.getNextStep()[0]));
 		}
 
-		isMatchALTFP_SQRT(board);
+		int altfpSqrtStartNum = isMatchALTFP_SQRT(board);
+		boolean instSel = true;
+		if (instSel){
+			replaceALTFP_SQRT(board, altfpSqrtStartNum);
+		}
 
 		for(SchedulerSlot slot: board.getSlots()){
 			for(SchedulerItem item: slot.getItems()){

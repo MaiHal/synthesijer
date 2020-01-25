@@ -51,9 +51,9 @@ public class SchedulerSlot {
 		int max = 0;
 		for(SchedulerItem item: items){
 			if(item.isBranchOp()) return item.getBranchId();
-			System.out.println("このitemのブランチだよ！"+item.getOp());
+			//System.out.println("このitemのブランチだよ！"+item.getOp());
 			max = item.getBranchId()[0] > max ? item.getBranchId()[0] : max;
-			System.out.println("ブランチidはこちら！"+item.getBranchId()[0]);
+			//System.out.println("ブランチidはこちら！"+item.getBranchId()[0]);
 		}
 		return new int[]{max};
 	}
