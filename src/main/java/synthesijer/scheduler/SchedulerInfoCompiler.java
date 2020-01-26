@@ -558,6 +558,8 @@ public class SchedulerInfoCompiler {
 
     //命令の追加
 		private HDLInstance altfp_sqrt = null;
+		private HDLInstance altfp_exp = null;
+		private HDLInstance altfp_abs = null;
 
 		private HDLInstance fadd64 = null;
 		private HDLInstance fsub64 = null;
@@ -1119,6 +1121,8 @@ public class SchedulerInfoCompiler {
 			}
 			//命令の追加
 			case ALTFP_SQRT :
+			case ALTFP_EXP :
+			case ALTFP_ABS :
 			{
 				Operand[] arg = item.getSrcOperand();
 				HDLInstance inst = getOperationUnit(item.getOp(), resource, board.getName());
@@ -1504,7 +1508,10 @@ public class SchedulerInfoCompiler {
 		}
 
 		int altfpSqrtStartNum = isMatchALTFP_SQRT(board);
-		boolean instSel = true;
+		boolean instSel = false;
+		if(altfpSqrtStartNum != -1){
+			instSel = true;
+		}
 		if (instSel){
 			replaceALTFP_SQRT(board, altfpSqrtStartNum);
 		}
@@ -1685,6 +1692,8 @@ public class SchedulerInfoCompiler {
 					case FSUB32 :
 					//命令の追加
 					case ALTFP_SQRT :
+					case ALTFP_EXP :
+					case ALTFP_ABS :
 					case FMUL32 :
 					case FDIV32 :
 					case FADD64 :
@@ -1806,9 +1815,16 @@ public class SchedulerInfoCompiler {
 	}
 
 	private HDLInstance newInstModule(String mName, String uName){
+		ArrayList<String> newOp = new ArrayList<String>(){
+			{
+				add(ALTFP_SQRT.getOpName());
+				add(ALTFP_EXP.getOpName());
+				add(ALTFP_ABS.getOpName());
+			}
+		};
 		Manager.SynthesijerModuleInfo info = Manager.INSTANCE.searchHDLModuleInfo(mName);
 		HDLInstance inst = hm.newModuleInstance(info.getHDLModule(), uName);
-		if(mName.equals("ALTFP_SQRT")){
+		if(newOp.contains(mName)){
 			inst.getSignalForPort("clock").setAssign(null, hm.getSysClk().getSignal());
 		}else{
 			inst.getSignalForPort("clk").setAssign(null, hm.getSysClk().getSignal());
@@ -1847,6 +1863,14 @@ public class SchedulerInfoCompiler {
 			case ALTFP_SQRT:{
 				if(resource.altfp_sqrt == null) resource.altfp_sqrt = newInstModule("ALTFP_SQRT", "altfp_sqrt");
 				return resource.altfp_sqrt;
+			}
+			case ALTFP_EXP:{
+				if(resource.altfp_exp == null) resource.altfp_exp = newInstModule("ALTFP_EXP", "altfp_exp");
+				return resource.altfp_exp;
+			}
+			case ALTFP_ABS:{
+				if(resource.altfp_abs == null) resource.altfp_abs = newInstModule("ALTFP_ABS", "altfp_abs");
+				return resource.altfp_abs;
 			}
 			case FADD32:{
 				if(resource.fadd32 == null) resource.fadd32 = newInstModule("FADD32", "u_synthesijer_fadd32" + "_" + name);

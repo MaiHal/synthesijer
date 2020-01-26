@@ -10,39 +10,27 @@ import synthesijer.hdl.HDLModule;
 import synthesijer.hdl.HDLPort.DIR;
 import synthesijer.hdl.HDLPrimitiveType;
 
-public class ALTFP_SQRT extends HDLModule{
+public class ALTFP_ABS extends HDLModule{
 
 	public float data;
 	public float result;
 	public static ArrayList<Op> op = new ArrayList<Op>(
 		Arrays.asList(
-			Op.FCOMPEQ32,
-			Op.JT,
-			Op.RETURN,
-			Op.FGT32,
-			Op.COND,
-			Op.ASSIGN,
-			Op.ASSIGN,
-			Op.FGT32,
-			Op.JT,
-			Op.FDIV32,
-			Op.FADD32,
-			Op.FDIV32,
-			Op.ASSIGN,
-			Op.FSUB32,
-			Op.ASSIGN,
-			Op.ASSIGN,
+			Op.FGEQ32,
+      Op.JT,
+      Op.RETURN,
+      Op.FMUL32,
 			Op.RETURN
 		)
 	);
 
-	public ALTFP_SQRT(){
-		super("altfp_sqrt", "clock");
+	public ALTFP_ABS(){
+		super("altfp_abs", "clock");
 		newPort("data",      DIR.IN,  HDLPrimitiveType.genVectorType(32));
 		newPort("result", DIR.OUT, HDLPrimitiveType.genVectorType(32));
 	}
 
-	public static String getOpName(){
-		return "ALTFP_SQRT";
+  public static String getOpName(){
+		return "ALTFP_ABS";
 	}
 }

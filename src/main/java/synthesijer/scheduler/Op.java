@@ -7,6 +7,8 @@ public enum Op {
 
   //命令の追加
 	ALTFP_SQRT(1),
+	ALTFP_EXP(1),
+	ALTFP_ABS(1),
 	METHOD_ENTRY(true),
 	METHOD_EXIT,
 	ASSIGN,
@@ -357,6 +359,8 @@ public enum Op {
 			case "FSUB32" : return FSUB32;
 			//命令の追加
 			case "ALTFP_SQRT" : return ALTFP_SQRT;
+			case "ALTFP_EXP" : return ALTFP_EXP;
+			case "ALTFP_ABS" : return ALTFP_ABS;
 			case "FMUL32" : return FMUL32;
 			case "FDIV32" : return FDIV32;
 			case "FADD64" : return FADD64;
