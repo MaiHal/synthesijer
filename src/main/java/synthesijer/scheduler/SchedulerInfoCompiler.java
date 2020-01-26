@@ -1452,15 +1452,15 @@ public class SchedulerInfoCompiler {
 		}
 	}
 
-	private int isMatchALTFP_SQRT(SchedulerBoard board){
+	private int isMatchIpOp(SchedulerBoard board, ArrayList<Op> op){
 		int id = 0;
 		int c = 0;
 		int startNum = -1;
 
 		for(SchedulerSlot slot: board.getSlots()){
 			for(SchedulerItem item: slot.getItems()){
-				if(c <= ALTFP_SQRT.op.size()-1){
-					if(item.getOp() == ALTFP_SQRT.op.get(c)){
+				if(c <= op.size()-1){
+					if(item.getOp() == op.get(c)){
 						if(startNum == -1){
 							startNum = id;
 						}
@@ -1507,7 +1507,9 @@ public class SchedulerInfoCompiler {
 			states.get(slot.getStepId()).addStateTransit(states.get(slot.getNextStep()[0]));
 		}
 
-		int altfpSqrtStartNum = isMatchALTFP_SQRT(board);
+		int altfpSqrtStartNum = isMatchIpOp(board, ALTFP_SQRT.op);
+		int altfpExpStartNum = isMatchIpOp(board, ALTFP_EXP.op);
+		int altfpAbsStartNum = isMatchIpOp(board, ALTFP_ABS.op);
 		boolean instSel = false;
 		if(altfpSqrtStartNum != -1){
 			instSel = true;
