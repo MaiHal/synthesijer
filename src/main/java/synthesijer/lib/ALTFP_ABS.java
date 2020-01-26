@@ -18,8 +18,9 @@ public class ALTFP_ABS extends HDLModule{
 		Arrays.asList(
 			Op.FGEQ32,
       Op.JT,
-      Op.RETURN,
+      Op.ASSIGN,
       Op.FMUL32,
+      Op.ASSIGN,
 			Op.RETURN
 		)
 	);

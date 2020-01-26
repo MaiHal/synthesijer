@@ -81,12 +81,13 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 					HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), o.getModule().getSysResetPairItem().getName()));
 				}
 			}else{
-				if(pair.port.getName().equals("data")){
+				/*if(pair.port.getName().equals("data")){
+					System.out.println("ぬるなんじゃないの〜〜〜〜"+GenerateVHDLDefVisitor.varSignals.size());
 					HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), GenerateVHDLDefVisitor.varSignals.get(0).getName()));
-				}else{
+				}else{*/
 				// その他のport
 					HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), pair.item.getName()));
-				}
+				//}
 			}
 			sep = "," + Constant.BR;
 		}

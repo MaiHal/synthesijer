@@ -1411,12 +1411,12 @@ public class SchedulerInfoCompiler {
 		return stack;
 	}
 
-	private void replaceALTFP_SQRT(SchedulerBoard board, int startNum){
+	private void replaceIpOp(SchedulerBoard board, int startNum, ArrayList<Op> op, Op ipOp){
 		int id = 0;
 		int c = 0;
 		Hashtable<String, VariableOperand> vOHash = new Hashtable<String, VariableOperand>();
-		VariableOperand altfp_sqrt_dest = null;
-		Operand[] altfp_sqrt_src = new Operand[2];
+		VariableOperand dest = null;
+		Operand[] src = new Operand[1];
 		SchedulerSlot tmp_slot = null;
 		int[] tmp_branchIDs = null;
 
@@ -1427,21 +1427,21 @@ public class SchedulerInfoCompiler {
 					vOHash.put(item.destInfo(), item.getDestOperand());
 				}
 				if(startNum <= id){
-					if(c < ALTFP_SQRT.op.size()-1){
+					if(c < op.size()-1){
 						if(c == 0){
-							altfp_sqrt_src = item.getSrcOperand();
+							src = item.getSrcOperand();
 						}
-						if(c == 15){
+						if(c == op.size()-2){
 							tmp_slot = slot;
 							tmp_branchIDs = item.getBranchId();
 						}
 						slot.items.remove(0);
-					}else if(c == ALTFP_SQRT.op.size()-1){
+					}else if(c == op.size()-1){
 						if(vOHash.containsKey(item.srcInfo())){
-							altfp_sqrt_dest = vOHash.get(item.srcInfo());
+							dest = vOHash.get(item.srcInfo());
 						}
 						if(tmp_slot != null){
-							SchedulerItem newItem = tmp_slot.insertItem(new SchedulerItem(board, Op.ALTFP_SQRT, altfp_sqrt_src, altfp_sqrt_dest), tmp_slot.getItems().length);
+							SchedulerItem newItem = tmp_slot.insertItem(new SchedulerItem(board, ipOp, src, dest), tmp_slot.getItems().length);
 							newItem.setBranchIds(tmp_branchIDs);
 						}
 					}
@@ -1514,8 +1514,15 @@ public class SchedulerInfoCompiler {
 		if(altfpSqrtStartNum != -1){
 			instSel = true;
 		}
-		if (instSel){
-			replaceALTFP_SQRT(board, altfpSqrtStartNum);
+		if(instSel){
+			//replaceALTFP_SQRT(board, altfpSqrtStartNum);
+			replaceIpOp(board, altfpSqrtStartNum, ALTFP_SQRT.op, Op.ALTFP_SQRT);
+		}
+		if(altfpExpStartNum != -1){
+			replaceIpOp(board, altfpExpStartNum, ALTFP_EXP.op, Op.ALTFP_EXP);
+		}
+		if(altfpAbsStartNum != -1){
+			replaceIpOp(board, altfpAbsStartNum, ALTFP_ABS.op, Op.ALTFP_ABS);
 		}
 
 		for(SchedulerSlot slot: board.getSlots()){
