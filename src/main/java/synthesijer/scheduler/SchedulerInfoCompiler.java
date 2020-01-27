@@ -1,6 +1,7 @@
 package synthesijer.scheduler;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -1476,6 +1477,88 @@ public class SchedulerInfoCompiler {
 		return startNum;
 	}
 
+	private boolean predSuccRule(SchedulerItem item, SchedulerItemModel model){
+		boolean result = true;
+		int i = 0;
+		// predecessorが等しいかどうか
+		for(Operand src :item.getSrcOperand()){
+			String[] info = src.toSexp().split(" ");
+			if(info[0].equals("(VAR") &&
+				model.getOperandModelCategory(i).equals("VAR") &&
+				info[1].equals(model.getOperandModelType(i))
+			){
+			}else if(info[0].equals("(CONSTANT") &&
+				model.getOperandModelCategory(i).equals("CONSTANT") &&
+				info[1].equals(model.getOperandModelType(i))
+			){
+			}else{
+				result = false;
+				break;
+			}
+			i += 1;
+		}
+		return result;
+	}
+
+	private boolean termInOutRule(SchedulerItem verItem, SchedulerItemModel model, SchedulerBoard board){
+		boolean result = false;
+		int sucNum = 0;
+		if(verItem.getDestOperand() != null){
+			for(SchedulerSlot slot: board.getSlots()){
+				for(SchedulerItem item: slot.getItems()){
+					String srcInfo = item.srcInfo();
+					if(srcInfo.contains(verItem.getDestOperand().getName())){
+						sucNum += 1;
+					}
+				}
+			}
+		}
+		if(sucNum == model.getVariableOperandModelSucc()){
+			result = true;
+		}
+		return result;
+	}
+
+	private int isMatchIp(SchedulerBoard board, ArrayList<SchedulerItemModel> coverItem){
+		int instNum = coverItem.size();
+		List<String> operandList = new ArrayList<String>();
+		Hashtable<SchedulerItem, SchedulerItemModel> mapping = new Hashtable<>();
+
+		for(SchedulerItemModel ci : coverItem){
+			ArrayList<SchedulerItemModel> itemModelPairs = new ArrayList<SchedulerItemModel>();
+			ArrayList<SchedulerItem> itemPairs = new ArrayList<SchedulerItem>();
+			for(SchedulerSlot slot: board.getSlots()){
+				for(SchedulerItem item: slot.getItems()){
+					if(ci.getOp() == item.getOp()){
+						itemModelPairs.add(ci);
+						itemPairs.add(item);
+					}
+				}
+			}
+			if(itemPairs.size()!=0){
+				ArrayList<SchedulerItem> SucceedItemPairs = new ArrayList<SchedulerItem>();
+				ArrayList<SchedulerItemModel> SucceedModelPairs = new ArrayList<SchedulerItemModel>();
+				for(int i = 0; i < itemPairs.size(); i++){
+					if(predSuccRule(itemPairs.get(i), itemModelPairs.get(i))){
+						if(termInOutRule(itemPairs.get(i), itemModelPairs.get(i), board)){
+							SucceedItemPairs.add(itemPairs.get(i));
+							SucceedModelPairs.add(itemModelPairs.get(i));
+						}
+					}
+					if(SucceedItemPairs.size() < 1){
+						instNum = 0;
+					}else if(SucceedItemPairs.size() == 1){
+						mapping.put(SucceedItemPairs.get(0), SucceedModelPairs.get(0));
+					}
+				}
+			}else{
+				instNum = 0;
+				break;
+			}
+		}
+		return mapping.size();
+	}
+
 	private Hashtable<Integer, SequencerState> genStatemachine(SchedulerBoard board, HardwareResource resource, Hashtable<Integer, SequencerState> returnTable, Hashtable<HDLVariable, HDLInstance> callStackMap){
 		HDLSequencer seq = hm.newSequencer(board.getName() + "_method");
 		IdGen id = new IdGen("S");
@@ -1514,14 +1597,12 @@ public class SchedulerInfoCompiler {
 		if(altfpSqrtStartNum != -1){
 			instSel = true;
 		}
-		if(instSel){
-			//replaceALTFP_SQRT(board, altfpSqrtStartNum);
-			replaceIpOp(board, altfpSqrtStartNum, ALTFP_SQRT.op, Op.ALTFP_SQRT);
-		}
+
 		if(altfpExpStartNum != -1){
 			replaceIpOp(board, altfpExpStartNum, ALTFP_EXP.op, Op.ALTFP_EXP);
-		}
-		if(altfpAbsStartNum != -1){
+		}else if(altfpSqrtStartNum != -1){
+			replaceIpOp(board, altfpSqrtStartNum, ALTFP_SQRT.op, Op.ALTFP_SQRT);
+		}else if(altfpAbsStartNum != -1){
 			replaceIpOp(board, altfpAbsStartNum, ALTFP_ABS.op, Op.ALTFP_ABS);
 		}
 
@@ -1535,7 +1616,7 @@ public class SchedulerInfoCompiler {
 					if(1 < srcs.length){
 						System.out.print(", "+srcs[1]);
 					}
-					System.out.println(", dest:"+item.destInfo());
+					System.out.println(", dest:"+item.destInfo()+", srcInfo:"+item.srcInfo());
 				}
 
 				switch(item.getOp()){
