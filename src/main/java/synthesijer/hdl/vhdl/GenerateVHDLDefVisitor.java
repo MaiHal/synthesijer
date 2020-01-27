@@ -28,7 +28,7 @@ public class GenerateVHDLDefVisitor implements HDLTreeVisitor{
 	private int offset;
 	public static ArrayList<String> compNames = new ArrayList<>();
 	public static ArrayList<HDLSignal> varSignals = new ArrayList<>();
-	public static ArrayList<HDLSignal> resSignals = new ArrayList<>();
+	public static ArrayList<HDLSignal> usingSignals = new ArrayList<>();
 	
 	private HashMap<HDLUserDefinedType, Boolean> definedType = new HashMap<>();
 
@@ -137,12 +137,6 @@ public class GenerateVHDLDefVisitor implements HDLTreeVisitor{
 			HDLUtils.nl(dest);
 			// architecture
 			HDLUtils.println(dest, offset, String.format("architecture RTL of %s is", o.getName()));
-			
-			// attribute部 
-			/*HDLUtils.println(dest, offset+2, String.format("attribute mark_debug : string;"));
-			HDLUtils.println(dest, offset+2, String.format("attribute keep : string;"));
-			HDLUtils.println(dest, offset+2, String.format("attribute S : string;"));
-			HDLUtils.nl(dest);*/
 
 			Hashtable<String, Boolean> componentFlags = new Hashtable<>();
 			// component部の呼び出し元
@@ -189,19 +183,38 @@ public class GenerateVHDLDefVisitor implements HDLTreeVisitor{
 		if(o.getType() instanceof HDLUserDefinedType){
 			((HDLUserDefinedType)o.getType()).accept(this);
 		}
-		String s;
+		String s = "";
 		// signal部の文字列を作成
 		if(o.getResetValue() != null){
-			if(o.isRegister()){
-				s = String.format("signal %s : %s := %s;", o.getName(), o.getType().getVHDL(), o.getResetValue().getVHDL());
+			if(o.getName().contains("sig")){
+				if(o.getName().contains("return")){
+					s = String.format("signal %s : %s := %s;", o.getName(), o.getType().getVHDL(), o.getResetValue().getVHDL());
+					usingSignals.add(o);
+				}
+			}else if(o.isRegister()){
+				int before = varSignals.size();
 				addVarSignal(o);
-				// signal部の出力
-				HDLUtils.println(dest, offset, s);
+				if(before != varSignals.size()){
+					for (String cn : compNames){
+						if(o.getName().contains(cn)){
+							s = String.format("signal %s : %s := %s;", o.getName(), o.getType().getVHDL(), o.getResetValue().getVHDL());
+							usingSignals.add(o);
+						}else if(!o.getResetValue().getVHDL().equals("(others => '0')")){
+							s = String.format("signal %s : %s := %s;", o.getName(), o.getType().getVHDL(), o.getResetValue().getVHDL());
+							usingSignals.add(o);
+						}
+					}
+				}
+			}else if(o.isWire()){
+				for (String cn : compNames){
+					if(o.getName().contains(cn) && !o.getName().contains("clk") && !o.getName().contains("reset")){
+						s = String.format("signal %s : %s;", o.getName(), o.getType().getVHDL());
+						usingSignals.add(o);
+					}
+				}
 			}
-			if(o.isWire()){
-				s = String.format("signal %s : %s;", o.getName(), o.getType().getVHDL());
-				addResSignal(o);
-				// signal部の出力
+			// signal部の出力
+			if(!s.equals("")){
 				HDLUtils.println(dest, offset, s);
 			}
 
@@ -218,15 +231,6 @@ public class GenerateVHDLDefVisitor implements HDLTreeVisitor{
 		if(1 < s.length){
 			if(!("returnbusyexprreqmethod".contains(s[1]))){
 				varSignals.add(o);
-			}
-		}
-	}
-
-	public void addResSignal(HDLSignal o){
-		String s = o.getName();
-		for(String cn : compNames){
-			if(s.contains(cn) && s.contains("result")){
-				resSignals.add(o);
 			}
 		}
 	}

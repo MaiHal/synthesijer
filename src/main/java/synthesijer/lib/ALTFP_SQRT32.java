@@ -10,10 +10,13 @@ import synthesijer.hdl.HDLModule;
 import synthesijer.hdl.HDLPort.DIR;
 import synthesijer.hdl.HDLPrimitiveType;
 
-public class ALTFP_SQRT extends HDLModule{
+public class ALTFP_SQRT32 extends HDLModule{
 
-	public float data;
+	public float a;
 	public float result;
+	public boolean valid;
+	public boolean nd;
+
 	public static ArrayList<Op> op = new ArrayList<Op>(
 		Arrays.asList(
 			Op.FCOMPEQ32,
@@ -110,14 +113,16 @@ public class ALTFP_SQRT extends HDLModule{
 			add(new SchedulerItemModel(Op.RETURN, srcs.get(25), null, null, dests.get(16)));
     }
   };
-	
-	public ALTFP_SQRT(){
-		super("altfp_sqrt", "clock");
-		newPort("data",      DIR.IN,  HDLPrimitiveType.genVectorType(32));
+
+	public ALTFP_SQRT32(){
+		super("synthesijer_altfp_sqrt32", "clk", "reset");
+		newPort("a",      DIR.IN,  HDLPrimitiveType.genVectorType(32));
+		newPort("nd",     DIR.IN,  HDLPrimitiveType.genBitType());
 		newPort("result", DIR.OUT, HDLPrimitiveType.genVectorType(32));
+		newPort("valid",  DIR.OUT, HDLPrimitiveType.genBitType());
 	}
 
 	public static String getOpName(){
-		return "ALTFP_SQRT";
+		return "ALTFP_SQRT32";
 	}
 }

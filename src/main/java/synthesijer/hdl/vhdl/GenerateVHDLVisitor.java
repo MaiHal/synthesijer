@@ -1,6 +1,8 @@
 package synthesijer.hdl.vhdl;
 
 import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.List;
 
 import synthesijer.Constant;
 import synthesijer.SynthesijerUtils;
@@ -56,6 +58,46 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 		HDLUtils.println(dest, offset, ")");
 	}
 
+	private void genProcess(int offset, HDLSignal[] o){
+		HDLUtils.println(dest, offset, String.format("process (clk)"));
+		HDLUtils.println(dest, offset, "begin");
+		String[] s = new String[6];
+			offset += 2;
+				for(HDLSignal hs : GenerateVHDLDefVisitor.usingSignals){
+					if(hs.isRegister()){
+						for(String cn : GenerateVHDLDefVisitor.compNames){
+							if(hs.getName().contains(cn)){
+								if(hs.getType().getVHDL().contains("vector")){
+									s[0] = hs.getName();
+								}else{
+									s[2] = hs.getName();
+								}
+							}else{
+								if(hs.getName().contains("return")){
+									s[4] = hs.getName();
+								}else{
+									s[1] = hs.getName();
+								}
+							}
+						}
+					}else{
+						if(hs.getType().getVHDL().contains("vector")){
+							s[5] = hs.getName();
+						}else{
+							s[3] = hs.getName();
+						}
+					}
+				}
+
+				HDLUtils.println(dest, offset, String.format("%s <= %s;", s[0], s[1]));
+				HDLUtils.println(dest, offset, String.format("%s <= '1';", s[2]));
+				HDLUtils.println(dest, offset, String.format("if %s = '1' then", s[3]));
+				HDLUtils.println(dest, offset+2, String.format("%s <= %s", s[4], s[5]));
+				HDLUtils.println(dest, offset, "end if;");
+			offset -= 2;
+		HDLUtils.println(dest, offset, "end process;");
+	}
+
 	private void genPortMap(HDLInstance o){
 		// インスタンス部のportmap文字列作成
 		HDLUtils.println(dest, offset, String.format("port map("));
@@ -81,13 +123,7 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 					HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), o.getModule().getSysResetPairItem().getName()));
 				}
 			}else{
-				/*if(pair.port.getName().equals("data")){
-					System.out.println("ぬるなんじゃないの〜〜〜〜"+GenerateVHDLDefVisitor.varSignals.size());
-					HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), GenerateVHDLDefVisitor.varSignals.get(0).getName()));
-				}else{*/
-				// その他のport
 					HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), pair.item.getName()));
-				//}
 			}
 			sep = "," + Constant.BR;
 		}
@@ -125,32 +161,13 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 			offset -= 2;
 		}
 		HDLUtils.nl(dest);
-		/*
-		// tmp signalに代入してる
-		HDLUtils.println(dest, offset+2, "-- expressions");
-		for(HDLExpr expr : o.getExprs()){
-			offset += 2;
-			expr.accept(this);
-			offset -= 2;
-		}
-		HDLUtils.nl(dest);*/
-		/*
-		// sequencersだ
-		HDLUtils.println(dest, offset+2, "-- sequencers");
-		for(HDLSequencer m: o.getSequencers()){
-			offset += 2;
-			m.accept(this);
-			offset -= 2;
-		}
-		HDLUtils.nl(dest);*/
-		/*
-		//色々代入
-		for(HDLSignal s: o.getSignals()){
-			offset += 2;
-			s.accept(this);
-			offset -= 2;
-		}
-		HDLUtils.nl(dest);*/
+
+		offset += 2;
+		genProcess(offset, o.getSignals());
+		offset -= 2;
+
+		HDLUtils.nl(dest);
+
 		// インスタンス生成とportmap出力の呼び出し元
 		for(HDLInstance i: o.getModuleInstances()){
 			offset += 2;
@@ -166,15 +183,9 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 		if(o.getDir() == HDLPort.DIR.INOUT){
 			return;
 		}else if(o.isOutput()){
-			for(HDLSignal res : GenerateVHDLDefVisitor.resSignals){
-				if(o.getType().isEqual(res.getType())){
-					HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getName(), res.getName()));
-				}else{
-					HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getName(), o.getSignal().getName()));
-				}
-			}
+			if(o.getName().contains("return")) HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getName(), o.getSignal().getName()));
 		}else{
-			HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getSignal().getName(), o.getName()));
+			//HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getSignal().getName(), o.getName()));
 		}
 		//ここはクロック考慮してから。
 		//o.getSignal().accept(this);

@@ -107,7 +107,7 @@ public class SimpleChaining implements SchedulerInfoOptimizer{
 			case FADD32:
 			case FSUB32:
 			//命令の追加
-			case ALTFP_SQRT:
+			case ALTFP_SQRT32:
 			case ALTFP_EXP:
 			case ALTFP_ABS:
 			case FMUL32:

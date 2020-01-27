@@ -6,7 +6,7 @@ import synthesijer.ast.type.PrimitiveTypeKind;
 public enum Op {
 
   //命令の追加
-	ALTFP_SQRT(1),
+	ALTFP_SQRT32(1),
 	ALTFP_EXP(1),
 	ALTFP_ABS(1),
 	METHOD_ENTRY(true),
@@ -358,7 +358,7 @@ public enum Op {
 			case "FADD32" : return FADD32;
 			case "FSUB32" : return FSUB32;
 			//命令の追加
-			case "ALTFP_SQRT" : return ALTFP_SQRT;
+			case "ALTFP_SQRT32" : return ALTFP_SQRT32;
 			case "ALTFP_EXP" : return ALTFP_EXP;
 			case "ALTFP_ABS" : return ALTFP_ABS;
 			case "FMUL32" : return FMUL32;
