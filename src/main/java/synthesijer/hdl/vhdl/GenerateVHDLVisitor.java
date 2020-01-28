@@ -92,7 +92,7 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 				HDLUtils.println(dest, offset, String.format("%s <= %s;", s[0], s[1]));
 				HDLUtils.println(dest, offset, String.format("%s <= '1';", s[2]));
 				HDLUtils.println(dest, offset, String.format("if %s = '1' then", s[3]));
-				HDLUtils.println(dest, offset+2, String.format("%s <= %s", s[4], s[5]));
+				HDLUtils.println(dest, offset+2, String.format("%s <= %s;", s[4], s[5]));
 				HDLUtils.println(dest, offset, "end if;");
 			offset -= 2;
 		HDLUtils.println(dest, offset, "end process;");
