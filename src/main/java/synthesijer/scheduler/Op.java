@@ -165,7 +165,6 @@ public enum Op {
 	}
 
 	public static Op get(synthesijer.ast.Op o, Operand lhs, Operand rhs){
-		System.out.println("オペレーション: "+o);
 		switch(o){
 			case PLUS: {
 				if(isDouble(lhs) || isDouble(rhs)) return FADD64;

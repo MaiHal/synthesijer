@@ -377,8 +377,6 @@ public class SchedulerInfoCompiler {
 			Manager.INSTANCE.compileSchedulerInfo(instName);
 			SynthesijerUtils.info("<<< return to compiling " + this.info.getName());
 		}
-		//System.out.println(v.getName());
-		//System.out.println(v.getOrigName());
 		HDLInstance inst = hm.newModuleInstance(info.getHDLModule(), name, v.getOrigName());
 
 		if(v.getInitSrc() != null){
@@ -717,7 +715,6 @@ public class SchedulerInfoCompiler {
 	}
 
 	private void genExpr(SchedulerBoard board, Hashtable<Integer, SequencerState> states, HardwareResource resource, SchedulerItem item, SequencerState state, HDLSignal return_sig, ArrayList<Pair> paramList, Hashtable<String, FieldAccessItem> fieldAccessChainMap, Hashtable<SchedulerItem, HDLExpr> predExprMap, Hashtable<Integer, SequencerState> returnTable){
-		System.out.println("いーえっくすぴーあーる"+item.getOp());
 		switch(item.getOp()){
 			case METHOD_ENTRY:{
 				if(paramList != null){
@@ -1590,16 +1587,6 @@ public class SchedulerInfoCompiler {
 		for(SchedulerSlot slot: board.getSlots()){
 			for(SchedulerItem item: slot.getItems()){
 				SequencerState s = states.get(item.getStepId());
-				Operand[] srcs = item.getSrcOperand(); //デバック後消す
-				// このif文デバック後消す
-				if(srcs != null){
-					System.out.print("【itemの情報】op: "+item.getOp()+", operand src:"+srcs[0]);
-					if(1 < srcs.length){
-						System.out.print(", "+srcs[1]);
-					}
-					System.out.println(", dest:"+item.destInfo()+", srcInfo:"+item.srcInfo());
-				}
-
 				switch(item.getOp()){
 					case METHOD_EXIT: {
 						HDLExpr unlock = null;
