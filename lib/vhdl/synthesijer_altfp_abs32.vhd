@@ -26,7 +26,7 @@ begin
 process (clk)
 begin
   if nd = '1' then
-    valid <= '1';
+    valid <= '1' after 0.51 ns;
   end if;
 end process;
 
