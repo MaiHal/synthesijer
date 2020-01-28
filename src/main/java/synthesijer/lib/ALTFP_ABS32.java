@@ -1,4 +1,3 @@
-//命令の追加
 //package synthesijer.lib;
 package synthesijer.scheduler;
 
@@ -10,10 +9,13 @@ import synthesijer.hdl.HDLModule;
 import synthesijer.hdl.HDLPort.DIR;
 import synthesijer.hdl.HDLPrimitiveType;
 
-public class ALTFP_ABS extends HDLModule{
+public class ALTFP_ABS32 extends HDLModule{
 
-	public float data;
+	public float a;
 	public float result;
+	public boolean valid;
+	public boolean nd;
+
 	public static ArrayList<Op> op = new ArrayList<Op>(
 		Arrays.asList(
 			Op.FGEQ32,
@@ -25,13 +27,15 @@ public class ALTFP_ABS extends HDLModule{
 		)
 	);
 
-	public ALTFP_ABS(){
-		super("altfp_abs", "clock");
-		newPort("data",      DIR.IN,  HDLPrimitiveType.genVectorType(32));
+	public ALTFP_ABS32(){
+		super("synthesijer_altfp_abs32", "clk", "reset");
+		newPort("a",      DIR.IN,  HDLPrimitiveType.genVectorType(32));
+		newPort("nd",     DIR.IN,  HDLPrimitiveType.genBitType());
 		newPort("result", DIR.OUT, HDLPrimitiveType.genVectorType(32));
+		newPort("valid",  DIR.OUT, HDLPrimitiveType.genBitType());
 	}
 
   public static String getOpName(){
-		return "ALTFP_ABS";
+		return "ALTFP_ABS32";
 	}
 }

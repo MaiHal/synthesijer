@@ -558,9 +558,9 @@ public class SchedulerInfoCompiler {
 		private HDLInstance fdiv32 = null;
 
     //命令の追加
-		private HDLInstance altfp_sqrt = null;
-		private HDLInstance altfp_exp = null;
-		private HDLInstance altfp_abs = null;
+		private HDLInstance altfp_sqrt32 = null;
+		private HDLInstance altfp_exp32 = null;
+		private HDLInstance altfp_abs32 = null;
 
 		private HDLInstance fadd64 = null;
 		private HDLInstance fsub64 = null;
@@ -1115,17 +1115,8 @@ public class SchedulerInfoCompiler {
 				break;
 			}
 			//命令の追加
-			case ALTFP_EXP :
-			case ALTFP_ABS :
-			{
-				Operand[] arg = item.getSrcOperand();
-				HDLInstance inst = getOperationUnit(item.getOp(), resource, board.getName());
-				inst.getSignalForPort("data").setAssign(state, 0, convOperandToHDLExpr(item, arg[0]));
-				HDLSignal dest = (HDLSignal)convOperandToHDLExpr(item, item.getDestOperand());
-				dest.setAssign(state, inst.getSignalForPort("result"));
-				predExprMap.put(item, inst.getSignalForPort("result"));
-				break;
-			}
+			case ALTFP_EXP32 :
+			case ALTFP_ABS32 :
 			case ALTFP_SQRT32 :
 			case FADD32 :
 			case FSUB32 :
@@ -1585,15 +1576,15 @@ public class SchedulerInfoCompiler {
 		}
 
 		int altfpSqrtStartNum = isMatchIpOp(board, ALTFP_SQRT32.op);
-		int altfpExpStartNum = isMatchIpOp(board, ALTFP_EXP.op);
-		int altfpAbsStartNum = isMatchIpOp(board, ALTFP_ABS.op);
+		int altfpExpStartNum = isMatchIpOp(board, ALTFP_EXP32.op);
+		int altfpAbsStartNum = isMatchIpOp(board, ALTFP_ABS32.op);
 
 		if(altfpExpStartNum != -1){
-			replaceIpOp(board, altfpExpStartNum, ALTFP_EXP.op, Op.ALTFP_EXP);
+			replaceIpOp(board, altfpExpStartNum, ALTFP_EXP32.op, Op.ALTFP_EXP32);
 		}else if(altfpSqrtStartNum != -1){
 			replaceIpOp(board, altfpSqrtStartNum, ALTFP_SQRT32.op, Op.ALTFP_SQRT32);
 		}else if(altfpAbsStartNum != -1){
-			replaceIpOp(board, altfpAbsStartNum, ALTFP_ABS.op, Op.ALTFP_ABS);
+			replaceIpOp(board, altfpAbsStartNum, ALTFP_ABS32.op, Op.ALTFP_ABS32);
 		}
 
 		for(SchedulerSlot slot: board.getSlots()){
@@ -1772,8 +1763,8 @@ public class SchedulerInfoCompiler {
 					case FSUB32 :
 					//命令の追加
 					case ALTFP_SQRT32 :
-					case ALTFP_EXP :
-					case ALTFP_ABS :
+					case ALTFP_EXP32 :
+					case ALTFP_ABS32 :
 					case FMUL32 :
 					case FDIV32 :
 					case FADD64 :
@@ -1895,13 +1886,6 @@ public class SchedulerInfoCompiler {
 	}
 
 	private HDLInstance newInstModule(String mName, String uName){
-		ArrayList<String> newOp = new ArrayList<String>(){
-			{
-				add(ALTFP_SQRT32.getOpName());
-				add(ALTFP_EXP.getOpName());
-				add(ALTFP_ABS.getOpName());
-			}
-		};
 		Manager.SynthesijerModuleInfo info = Manager.INSTANCE.searchHDLModuleInfo(mName);
 		HDLInstance inst = hm.newModuleInstance(info.getHDLModule(), uName);
 			inst.getSignalForPort("clk").setAssign(null, hm.getSysClk().getSignal());
@@ -1937,16 +1921,16 @@ public class SchedulerInfoCompiler {
 			}
 			//命令の追加
 			case ALTFP_SQRT32:{
-				if(resource.altfp_sqrt == null) resource.altfp_sqrt = newInstModule("ALTFP_SQRT32", "u_synthesijer_altfp_sqrt32");
-				return resource.altfp_sqrt;
+				if(resource.altfp_sqrt32 == null) resource.altfp_sqrt32 = newInstModule("ALTFP_SQRT32", "u_synthesijer_altfp_sqrt32");
+				return resource.altfp_sqrt32;
 			}
-			case ALTFP_EXP:{
-				if(resource.altfp_exp == null) resource.altfp_exp = newInstModule("ALTFP_EXP", "altfp_exp");
-				return resource.altfp_exp;
+			case ALTFP_EXP32:{
+				if(resource.altfp_exp32 == null) resource.altfp_exp32 = newInstModule("ALTFP_EXP32", "u_synthesijer_altfp_exp32");
+				return resource.altfp_exp32;
 			}
-			case ALTFP_ABS:{
-				if(resource.altfp_abs == null) resource.altfp_abs = newInstModule("ALTFP_ABS", "altfp_abs");
-				return resource.altfp_abs;
+			case ALTFP_ABS32:{
+				if(resource.altfp_abs32 == null) resource.altfp_abs32 = newInstModule("ALTFP_ABS32", "u_synthesijer_altfp_abs32");
+				return resource.altfp_abs32;
 			}
 			case FADD32:{
 				if(resource.fadd32 == null) resource.fadd32 = newInstModule("FADD32", "u_synthesijer_fadd32" + "_" + name);

@@ -229,7 +229,11 @@ public class GenerateVHDLDefVisitor implements HDLTreeVisitor{
 	public void addVarSignal(HDLSignal o){
 		String[] s = o.getName().split("_");
 		if(1 < s.length){
-			if(!("returnbusyexprreqmethod".contains(s[1]))){
+			if(!s[1].contains("return") &&
+				!s[1].contains("busy") &&
+				!s[1].contains("req") &&
+				!s[1].contains("method") &&
+				!s[1].contains("expr")){
 				varSignals.add(o);
 			}
 		}
