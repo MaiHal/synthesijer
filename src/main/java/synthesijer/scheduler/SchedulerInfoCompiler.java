@@ -1578,10 +1578,22 @@ public class SchedulerInfoCompiler {
 
 		if(altfpExpStartNum != -1){
 			replaceIpOp(board, altfpExpStartNum, ALTFP_EXP32.op, Op.ALTFP_EXP32);
+			System.out.println("------------------------------------------------");
+			System.out.println("プロジェクトに ALTFP_EXP IPコアを");
+			System.out.println("altfp_exp32_ipというファイル名で追加してください");
+			System.out.println("------------------------------------------------");
 		}else if(altfpSqrtStartNum != -1){
 			replaceIpOp(board, altfpSqrtStartNum, ALTFP_SQRT32.op, Op.ALTFP_SQRT32);
+			System.out.println("------------------------------------------------");
+			System.out.println("プロジェクトに ALTFP_SQRT IPコアを");
+			System.out.println("altfp_sqrt32_ipというファイル名で追加してください");
+			System.out.println("------------------------------------------------");
 		}else if(altfpAbsStartNum != -1){
 			replaceIpOp(board, altfpAbsStartNum, ALTFP_ABS32.op, Op.ALTFP_ABS32);
+			System.out.println("------------------------------------------------");
+			System.out.println("プロジェクトに ALTFP_ABS IPコアを");
+			System.out.println("altfp_abs32_ipというファイル名で追加してください");
+			System.out.println("------------------------------------------------");
 		}
 
 		for(SchedulerSlot slot: board.getSlots()){
