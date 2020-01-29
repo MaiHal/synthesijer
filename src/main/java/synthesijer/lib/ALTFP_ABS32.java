@@ -18,7 +18,7 @@ public class ALTFP_ABS32 extends HDLModule{
 
 	public static ArrayList<Op> op = new ArrayList<Op>(
 		Arrays.asList(
-			Op.FGEQ32,
+			Op.FGT32,
       Op.JT,
       Op.ASSIGN,
       Op.FMUL32,
