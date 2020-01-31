@@ -1459,31 +1459,64 @@ public class SchedulerInfoCompiler {
 		return startNum;
 	}
 
-	private boolean predSuccRule(SchedulerItem item, SchedulerItemModel model){
+	private boolean predSuccRule(SchedulerItem item, SchedulerItemModel model, ArrayList<SchedulerItemModel> coverItem){
 		boolean result = true;
-		int i = 0;
 		// predecessorが等しいかどうか
-		for(Operand src :item.getSrcOperand()){
-			String[] info = src.toSexp().split(" ");
-			if(info[0].equals("(VAR") &&
-				model.getOperandModelCategory(i).equals("VAR") &&
-				info[1].equals(model.getOperandModelType(i))
-			){
-			}else if(info[0].equals("(CONSTANT") &&
-				model.getOperandModelCategory(i).equals("CONSTANT") &&
-				info[1].equals(model.getOperandModelType(i))
-			){
-			}else{
-				result = false;
-				break;
+		if(model.getPred().length != 0){
+			for(int mpId : model.getPred()){
+				if(mpId == -1){
+					result = true;
+					continue;
+				}else{
+					result = false;
+					//System.out.println("モデルの先行節: "+coverItem.get(mpId).getOp());
+				}
+				for(SchedulerItem p : item.getPred()){
+					//System.out.println("先行節: "+p.getOp());
+					if(coverItem.get(mpId).getOp() == p.getOp()){
+						result = true;
+						break;
+					}
+				}
+				if(!result) break;
 			}
-			i += 1;
+		}else{
+			if(item.getPred().size() != 0){
+				result = false;
+			}
+		}
+		// successorが等しいかどうか
+		if(result){
+			if(model.getSucc().length != 0){
+				for(int msId : model.getSucc()){
+					if(msId == -1){
+						result = true;
+						continue;
+					}else{
+						result = false;
+						//System.out.println("モデルの後続節: "+coverItem.get(msId).getOp());
+					}
+					for(SchedulerItem s : item.getSucc()){
+						//System.out.println("後続節: "+s.getOp());
+						if(coverItem.get(msId).getOp() == s.getOp()){
+							result = true;
+							break;
+						}
+					}
+					if(!result) break;
+				}
+			}else{
+				if(item.getSucc().size() != 0){
+					result = false;
+				}
+			}
 		}
 		return result;
 	}
 
 	private boolean termInOutRule(SchedulerItem verItem, SchedulerItemModel model, SchedulerBoard board){
 		boolean result = false;
+		/*boolean result = false;
 		int sucNum = 0;
 		if(verItem.getDestOperand() != null){
 			for(SchedulerSlot slot: board.getSlots()){
@@ -1499,25 +1532,104 @@ public class SchedulerInfoCompiler {
 			result = true;
 		}
 		return result;
+		*/
+		return result;
+	}
+
+	private void searchPredSucc(SchedulerBoard board, SchedulerItem currentItem, int start){
+		int i = 0;
+		String dest = currentItem.destInfo();
+		for(SchedulerSlot slot: board.getSlots()){
+			for(SchedulerItem item: slot.getItems()){
+				if(i > start){
+					//System.out.println("検索オペランド: "+item.getOp());
+					//System.out.println("ソース:"+item.srcInfo());
+					if(item.srcInfo().contains(",")){
+						String[] src = item.srcInfo().split(",");
+						for(String s : src){
+							if(s.contains(" ")){
+								s = s.replace(" ", "");
+							}
+							if(dest.equals(s)){
+								currentItem.addPred(item);
+								item.addSucc(currentItem);
+								//System.out.println("先行節に追加:"+s);
+							}
+						}
+					}else{
+						if(dest.equals(item.srcInfo())){
+							currentItem.addPred(item);
+							item.addSucc(currentItem);
+							//System.out.println("先行節に追加:"+item.srcInfo());
+						}
+					}
+				}
+				i += 1;
+			}
+		}
 	}
 
 	private int isMatchIp(SchedulerBoard board, ArrayList<SchedulerItemModel> coverItem){
-		int instNum = coverItem.size();
-		List<String> operandList = new ArrayList<String>();
-		Hashtable<SchedulerItem, SchedulerItemModel> mapping = new Hashtable<>();
+		// predecessorとsuccessorを追加
+		int count = 0;
+		for(SchedulerSlot slot: board.getSlots()){
+			for(SchedulerItem item: slot.getItems()){
+				if(!item.destInfo().equals("")){
+					searchPredSucc(board, item, count);
+				}
+				item.setId(count);
+				count += 1;
+			}
+		}
 
+		// 見本構築のため確認
+		/*for(SchedulerSlot slot: board.getSlots()){
+			for(SchedulerItem item: slot.getItems()){
+				System.out.println("itemのop: "+item.getOp()+", id:"+item.getId());
+				System.out.println("itemのPred "+item.getPred().size()+" つ");
+				for(SchedulerItem pi : item.getPred()){
+					System.out.println("Predのid: "+(pi.getId()-3));
+				}
+				System.out.println("itemのSucc "+item.getSucc().size()+" つ");
+				for(SchedulerItem si : item.getSucc()){
+					System.out.println("Succのid: "+(si.getId()-3));
+				}
+			}
+		}*/
+
+		// ペアを作成
+		ArrayList<SchedulerItem> itemPairs = new ArrayList<>();
+		ArrayList<SchedulerItemModel> itemModelPairs = new ArrayList<>();
+		//Hashtable<SchedulerItem, SchedulerItemModel> candidatePairs = new Hashtable<>();
 		for(SchedulerItemModel ci : coverItem){
-			ArrayList<SchedulerItemModel> itemModelPairs = new ArrayList<SchedulerItemModel>();
-			ArrayList<SchedulerItem> itemPairs = new ArrayList<SchedulerItem>();
 			for(SchedulerSlot slot: board.getSlots()){
 				for(SchedulerItem item: slot.getItems()){
-					if(ci.getOp() == item.getOp()){
-						itemModelPairs.add(ci);
+					if(item.getOp() == ci.getOp()){
 						itemPairs.add(item);
+						itemModelPairs.add(ci);
+						//System.out.println("ci"+ci.getOp()+", item"+item.getOp());
 					}
 				}
 			}
-			if(itemPairs.size()!=0){
+		}
+		/*int instNum = coverItem.size();
+		List<String> operandList = new ArrayList<String>();*/
+		ArrayList<SchedulerItem> SucceedItemPairs = new ArrayList<SchedulerItem>();
+		ArrayList<SchedulerItemModel> SucceedModelPairs = new ArrayList<SchedulerItemModel>();
+		Hashtable<SchedulerItem, SchedulerItemModel> mapping = new Hashtable<>();
+
+		for(int i = 0; i < itemPairs.size(); i++){
+			System.out.println("Op: "+itemPairs.get(i).getOp()+"---------------");
+			if(predSuccRule(itemPairs.get(i), itemModelPairs.get(i), coverItem)){
+				//if(termInOutRule(itemPairs.get(i), itemModelPairs.get(i), board)){
+					SucceedItemPairs.add(itemPairs.get(i));
+					SucceedModelPairs.add(itemModelPairs.get(i));
+					System.out.println("op :"+itemPairs.get(i).getOp()+"OK!!");
+				/*}else{ //
+					System.out.println("op :"+itemPairs.get(i).getOp()+"NG!!"); //
+				} //*/
+			}
+			/*if(itemPairs.size()!=0){
 				ArrayList<SchedulerItem> SucceedItemPairs = new ArrayList<SchedulerItem>();
 				ArrayList<SchedulerItemModel> SucceedModelPairs = new ArrayList<SchedulerItemModel>();
 				for(int i = 0; i < itemPairs.size(); i++){
@@ -1536,7 +1648,7 @@ public class SchedulerInfoCompiler {
 			}else{
 				instNum = 0;
 				break;
-			}
+			}*/
 		}
 		return mapping.size();
 	}
@@ -1572,9 +1684,13 @@ public class SchedulerInfoCompiler {
 			states.get(slot.getStepId()).addStateTransit(states.get(slot.getNextStep()[0]));
 		}
 
-		int altfpSqrtStartNum = isMatchIpOp(board, ALTFP_SQRT32.op);
+		//isMatchIp(board, ALTFP_SQRT32.coverItem);
+		isMatchIp(board, ALTFP_SQRT32.coverItem);
+
+		//int altfpSqrtStartNum = isMatchIpOp(board, ALTFP_SQRT32.op);
 		int altfpExpStartNum = isMatchIpOp(board, ALTFP_EXP32.op);
 		int altfpAbsStartNum = isMatchIpOp(board, ALTFP_ABS32.op);
+		int altfpSqrtStartNum = -1;
 
 		if(altfpExpStartNum != -1){
 			replaceIpOp(board, altfpExpStartNum, ALTFP_EXP32.op, Op.ALTFP_EXP32);

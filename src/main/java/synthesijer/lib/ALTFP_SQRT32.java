@@ -92,7 +92,7 @@ public class ALTFP_SQRT32 extends HDLModule{
 		}
 	};
 
-	public static ArrayList<SchedulerItemModel> coverItem = new ArrayList<SchedulerItemModel>(){
+	/*public static ArrayList<SchedulerItemModel> coverItem = new ArrayList<SchedulerItemModel>(){
     {
       add(new SchedulerItemModel(Op.FCOMPEQ32, srcs.get(0), srcs.get(1), null, dests.get(0)));
 			add(new SchedulerItemModel(Op.JT, srcs.get(2), null, null, dests.get(1)));
@@ -112,7 +112,65 @@ public class ALTFP_SQRT32 extends HDLModule{
 			add(new SchedulerItemModel(Op.ASSIGN, srcs.get(24), null, null, dests.get(15)));
 			add(new SchedulerItemModel(Op.RETURN, srcs.get(25), null, null, dests.get(16)));
     }
-  };
+  };*/
+
+	public static int[] pred_0 = {1};
+	public static int[] succ_0 = {-1};
+	public static int[] pred_1 = {};
+	public static int[] succ_1 = {0};
+	public static int[] pred_2 = {9, 10, 13, 16};
+	public static int[] succ_2 = {};
+	public static int[] pred_3 = {4};
+	public static int[] succ_3 = {-1};
+	public static int[] pred_4 = {6};
+	public static int[] succ_4 = {-1, 3};
+	public static int[] pred_5 = {7};
+	public static int[] succ_5 = {-1};
+	public static int[] pred_6 = {9, 10, 13, 16};
+	public static int[] succ_6 = {4};
+	public static int[] pred_7 = {8};
+	public static int[] succ_7 = {5};
+	public static int[] pred_8 = {};
+	public static int[] succ_8 = {7};
+	public static int[] pred_9 = {10};
+	public static int[] succ_9 = {-1, 2, 6};
+	public static int[] pred_10 = {11};
+	public static int[] succ_10 = {2, 6, 9};
+	public static int[] pred_11 = {12};
+	public static int[] succ_11 = {10};
+	public static int[] pred_12 = {13, 15};
+	public static int[] succ_12 = {11};
+	public static int[] pred_13 = {14};
+	public static int[] succ_13 = {2, 6, 12};
+	public static int[] pred_14 = {};
+	public static int[] succ_14 = {13};
+	public static int[] pred_15 = {16};
+	public static int[] succ_15 = {12};
+	public static int[] pred_16 = {};
+	public static int[] succ_16 = {2, 6, 15};
+	
+
+	public static ArrayList<SchedulerItemModel> coverItem = new ArrayList<SchedulerItemModel>(){
+    {
+      add(new SchedulerItemModel(Op.FCOMPEQ32, pred_0, succ_0));
+			add(new SchedulerItemModel(Op.JT, pred_1, succ_1));
+			add(new SchedulerItemModel(Op.ASSIGN, pred_2, succ_2));
+			add(new SchedulerItemModel(Op.FGT32, pred_3, succ_3));
+			add(new SchedulerItemModel(Op.COND, pred_4, succ_4));
+			add(new SchedulerItemModel(Op.ASSIGN, pred_5, succ_5));
+			add(new SchedulerItemModel(Op.ASSIGN, pred_6, succ_6));
+			add(new SchedulerItemModel(Op.FGT32, pred_7, succ_7));
+			add(new SchedulerItemModel(Op.JT, pred_8, succ_8));
+			add(new SchedulerItemModel(Op.FDIV32, pred_9, succ_9));
+			add(new SchedulerItemModel(Op.FADD32, pred_10, succ_10));
+			add(new SchedulerItemModel(Op.FDIV32, pred_11, succ_11));
+			add(new SchedulerItemModel(Op.ASSIGN, pred_12, succ_12));
+			add(new SchedulerItemModel(Op.FSUB32, pred_13, succ_13));
+			add(new SchedulerItemModel(Op.ASSIGN, pred_14, succ_14));
+			add(new SchedulerItemModel(Op.ASSIGN, pred_15, succ_15));
+			add(new SchedulerItemModel(Op.RETURN, pred_16, succ_16));
+    }
+	};
 
 	public ALTFP_SQRT32(){
 		super("synthesijer_altfp_sqrt32", "clk", "reset");
