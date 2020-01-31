@@ -1,6 +1,7 @@
 package synthesijer.scheduler;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -376,8 +377,6 @@ public class SchedulerInfoCompiler {
 			Manager.INSTANCE.compileSchedulerInfo(instName);
 			SynthesijerUtils.info("<<< return to compiling " + this.info.getName());
 		}
-		//System.out.println(v.getName());
-		//System.out.println(v.getOrigName());
 		HDLInstance inst = hm.newModuleInstance(info.getHDLModule(), name, v.getOrigName());
 
 		if(v.getInitSrc() != null){
@@ -556,6 +555,11 @@ public class SchedulerInfoCompiler {
 		private HDLInstance fmul32 = null;
 		private HDLInstance fdiv32 = null;
 
+    //命令の追加
+		private HDLInstance altfp_sqrt32 = null;
+		private HDLInstance altfp_exp32 = null;
+		private HDLInstance altfp_abs32 = null;
+
 		private HDLInstance fadd64 = null;
 		private HDLInstance fsub64 = null;
 		private HDLInstance fmul64 = null;
@@ -620,13 +624,14 @@ public class SchedulerInfoCompiler {
 		HDLSignal return_sig = null;
 		return_sig = returnSigTable.get(board);
 		Hashtable<String, FieldAccessItem> fieldAccessChainMap = new Hashtable<>();
+		ArrayList<SchedulerItem> items = new ArrayList<SchedulerItem>();
 		for(SchedulerSlot slot: board.getSlots()){
 			int id = slot.getStepId();
 			for(SchedulerItem item: slot.getItems()){
+				items.add(item);
 				genExpr(board, states, resource, item, states.get(id), return_sig, paramListMap.get(board.getName()), fieldAccessChainMap, predExprMap, returnTable);
 			}
 		}
-
 	}
 
 	private HDLOp convOp2HDLOp(Op op){
@@ -636,16 +641,10 @@ public class SchedulerInfoCompiler {
 			case METHOD_EXIT : break;
 			case ASSIGN : break;
 			case NOP : break;
-			//ここでHDLOp.ADDにするかHDLOp.IP_ADDにするかを実装
 			case ADD : ret = HDLOp.ADD;break;
-				/*if(1==1){
-					ret = HDLOp.IP_ADD;break;
-				}else{
-					ret = HDLOp.ADD;break;	
-				}*/
 			case SUB : ret = HDLOp.SUB;break;
-			case MUL32 : break; //ret = HDLOp.MUL;break;
-			case MUL64 : break; // ret = HDLOp.MUL;break;
+			case MUL32 : break; 
+			case MUL64 : break;
 			case DIV32 : break;
 			case DIV64 : break;
 			case MOD32 : break;
@@ -691,7 +690,7 @@ public class SchedulerInfoCompiler {
 			case BREAK : break;
 			case CONTINUE : break;
 			case CAST : break;
-		    case PHI : ret = HDLOp.PHI; break;
+		  case PHI : ret = HDLOp.PHI; break;
 			case UNDEFINED : break;
 		    default: {
 				SynthesijerUtils.warn("Using undefined Op in SchedulerInfoCompiler::convOp2HDLOp: " + op);
@@ -935,14 +934,14 @@ public class SchedulerInfoCompiler {
 			case CALL :{
 				MethodInvokeItem item0 = (MethodInvokeItem)item;
 				Operand[] params = item0.getSrcOperand();
-				//System.out.println(item0.getSrcOperand().length);
-				//for(Operand param: params) System.out.println("Parameter : " + param.toString());
+				//System.out.println(item0.getSrcOperand().length); //元からコメントアウト
+				//for(Operand param: params) System.out.println("Parameter : " + param.toString()); //元からコメントアウト
 				ArrayList<Pair> list = getMethodParamPairList(item0.name);
 				for(int i = 0; i < params.length; i++){
 					HDLSignal t = list.get(i).local;
 					HDLExpr s = convOperandToHDLExpr(item, params[i]);
 					t.setAssign(state.getTransitions().get(0).getDestState(), 0, s);  // should set in ***_body
-					//t.setAssign(state, 0, s);
+					//t.setAssign(state, 0, s); //元からコメントアウト
 				}
 				if(item0.getDestOperand().getType() != PrimitiveTypeKind.VOID){
 					HDLSignal dest = (HDLSignal)convOperandToHDLExpr(item, item0.getDestOperand());
@@ -1112,6 +1111,10 @@ public class SchedulerInfoCompiler {
 				predExprMap.put(item, inst.getSignalForPort("remainder"));
 				break;
 			}
+			//命令の追加
+			case ALTFP_EXP32 :
+			case ALTFP_ABS32 :
+			case ALTFP_SQRT32 :
 			case FADD32 :
 			case FSUB32 :
 			case FMUL32 :
@@ -1124,7 +1127,6 @@ public class SchedulerInfoCompiler {
 				Operand[] arg = item.getSrcOperand();
 				HDLInstance inst = getOperationUnit(item.getOp(), resource, board.getName());
 				inst.getSignalForPort("a").setAssign(state, 0, convOperandToHDLExpr(item, arg[0]));
-				inst.getSignalForPort("b").setAssign(state, 0, convOperandToHDLExpr(item, arg[1]));
 				inst.getSignalForPort("nd").setAssign(state, 0, HDLPreDefinedConstant.HIGH);
 				inst.getSignalForPort("nd").setDefaultValue(HDLPreDefinedConstant.LOW);
 				HDLSignal dest = (HDLSignal)convOperandToHDLExpr(item, item.getDestOperand());
@@ -1392,6 +1394,265 @@ public class SchedulerInfoCompiler {
 		return stack;
 	}
 
+	private void replaceIpOp(SchedulerBoard board, int startNum, ArrayList<Op> op, Op ipOp){
+		int id = 0;
+		int c = 0;
+		Hashtable<String, VariableOperand> vOHash = new Hashtable<String, VariableOperand>();
+		VariableOperand dest = null;
+		Operand[] src = new Operand[1];
+		SchedulerSlot tmp_slot = null;
+		int[] tmp_branchIDs = null;
+
+		for(SchedulerSlot slot: board.getSlots()){
+			for(SchedulerItem item: slot.getItems()){
+				ArrayList<Op> tmpOpList = new ArrayList<Op>();
+				if (item.getDestOperand() != null){
+					vOHash.put(item.destInfo(), item.getDestOperand());
+				}
+				if(startNum <= id){
+					if(c < op.size()-1){
+						if(c == 0){
+							src = item.getSrcOperand();
+						}
+						if(c == op.size()-2){
+							tmp_slot = slot;
+							tmp_branchIDs = item.getBranchId();
+						}
+						slot.items.remove(0);
+					}else if(c == op.size()-1){
+						if(vOHash.containsKey(item.srcInfo())){
+							dest = vOHash.get(item.srcInfo());
+						}
+						if(tmp_slot != null){
+							SchedulerItem newItem = tmp_slot.insertItem(new SchedulerItem(board, ipOp, src, dest), tmp_slot.getItems().length);
+							newItem.setBranchIds(tmp_branchIDs);
+						}
+					}
+					c += 1;
+				}
+				id += 1;
+			}
+		}
+	}
+
+	private int isMatchIpOp(SchedulerBoard board, ArrayList<Op> op){
+		int id = 0;
+		int c = 0;
+		int startNum = -1;
+
+		for(SchedulerSlot slot: board.getSlots()){
+			for(SchedulerItem item: slot.getItems()){
+				if(c <= op.size()-1){
+					if(item.getOp() == op.get(c)){
+						if(startNum == -1){
+							startNum = id;
+						}
+						c += 1;
+					}else{
+						startNum = -1;
+						c = 0;
+					}
+				}
+				id += 1;
+			}
+		}
+		return startNum;
+	}
+
+	private boolean predSuccRule(SchedulerItem item, SchedulerItemModel model, ArrayList<SchedulerItemModel> coverItem){
+		boolean result = true;
+		// predecessorが等しいかどうか
+		if(model.getPred().length != 0){
+			for(int mpId : model.getPred()){
+				if(mpId == -1){
+					result = true;
+					continue;
+				}else{
+					result = false;
+					//System.out.println("モデルの先行節: "+coverItem.get(mpId).getOp());
+				}
+				for(SchedulerItem p : item.getPred()){
+					//System.out.println("先行節: "+p.getOp());
+					if(coverItem.get(mpId).getOp() == p.getOp()){
+						result = true;
+						break;
+					}
+				}
+				if(!result) break;
+			}
+		}else{
+			if(item.getPred().size() != 0){
+				result = false;
+			}
+		}
+		// successorが等しいかどうか
+		if(result){
+			if(model.getSucc().length != 0){
+				for(int msId : model.getSucc()){
+					if(msId == -1){
+						result = true;
+						continue;
+					}else{
+						result = false;
+						//System.out.println("モデルの後続節: "+coverItem.get(msId).getOp());
+					}
+					for(SchedulerItem s : item.getSucc()){
+						//System.out.println("後続節: "+s.getOp());
+						if(coverItem.get(msId).getOp() == s.getOp()){
+							result = true;
+							break;
+						}
+					}
+					if(!result) break;
+				}
+			}else{
+				if(item.getSucc().size() != 0){
+					result = false;
+				}
+			}
+		}
+		return result;
+	}
+
+	private boolean termInOutRule(SchedulerItem verItem, SchedulerItemModel model, SchedulerBoard board){
+		boolean result = false;
+		/*boolean result = false;
+		int sucNum = 0;
+		if(verItem.getDestOperand() != null){
+			for(SchedulerSlot slot: board.getSlots()){
+				for(SchedulerItem item: slot.getItems()){
+					String srcInfo = item.srcInfo();
+					if(srcInfo.contains(verItem.getDestOperand().getName())){
+						sucNum += 1;
+					}
+				}
+			}
+		}
+		if(sucNum == model.getVariableOperandModelSucc()){
+			result = true;
+		}
+		return result;
+		*/
+		return result;
+	}
+
+	private void searchPredSucc(SchedulerBoard board, SchedulerItem currentItem, int start){
+		int i = 0;
+		String dest = currentItem.destInfo();
+		for(SchedulerSlot slot: board.getSlots()){
+			for(SchedulerItem item: slot.getItems()){
+				if(i > start){
+					//System.out.println("検索オペランド: "+item.getOp());
+					//System.out.println("ソース:"+item.srcInfo());
+					if(item.srcInfo().contains(",")){
+						String[] src = item.srcInfo().split(",");
+						for(String s : src){
+							if(s.contains(" ")){
+								s = s.replace(" ", "");
+							}
+							if(dest.equals(s)){
+								currentItem.addPred(item);
+								item.addSucc(currentItem);
+								//System.out.println("先行節に追加:"+s);
+							}
+						}
+					}else{
+						if(dest.equals(item.srcInfo())){
+							currentItem.addPred(item);
+							item.addSucc(currentItem);
+							//System.out.println("先行節に追加:"+item.srcInfo());
+						}
+					}
+				}
+				i += 1;
+			}
+		}
+	}
+
+	private int isMatchIp(SchedulerBoard board, ArrayList<SchedulerItemModel> coverItem){
+		// predecessorとsuccessorを追加
+		int count = 0;
+		for(SchedulerSlot slot: board.getSlots()){
+			for(SchedulerItem item: slot.getItems()){
+				if(!item.destInfo().equals("")){
+					searchPredSucc(board, item, count);
+				}
+				item.setId(count);
+				count += 1;
+			}
+		}
+
+		// 見本構築のため確認
+		/*for(SchedulerSlot slot: board.getSlots()){
+			for(SchedulerItem item: slot.getItems()){
+				System.out.println("itemのop: "+item.getOp()+", id:"+item.getId());
+				System.out.println("itemのPred "+item.getPred().size()+" つ");
+				for(SchedulerItem pi : item.getPred()){
+					System.out.println("Predのid: "+(pi.getId()-3));
+				}
+				System.out.println("itemのSucc "+item.getSucc().size()+" つ");
+				for(SchedulerItem si : item.getSucc()){
+					System.out.println("Succのid: "+(si.getId()-3));
+				}
+			}
+		}*/
+
+		// ペアを作成
+		ArrayList<SchedulerItem> itemPairs = new ArrayList<>();
+		ArrayList<SchedulerItemModel> itemModelPairs = new ArrayList<>();
+		//Hashtable<SchedulerItem, SchedulerItemModel> candidatePairs = new Hashtable<>();
+		for(SchedulerItemModel ci : coverItem){
+			for(SchedulerSlot slot: board.getSlots()){
+				for(SchedulerItem item: slot.getItems()){
+					if(item.getOp() == ci.getOp()){
+						itemPairs.add(item);
+						itemModelPairs.add(ci);
+						//System.out.println("ci"+ci.getOp()+", item"+item.getOp());
+					}
+				}
+			}
+		}
+		/*int instNum = coverItem.size();
+		List<String> operandList = new ArrayList<String>();*/
+		ArrayList<SchedulerItem> SucceedItemPairs = new ArrayList<SchedulerItem>();
+		ArrayList<SchedulerItemModel> SucceedModelPairs = new ArrayList<SchedulerItemModel>();
+		Hashtable<SchedulerItem, SchedulerItemModel> mapping = new Hashtable<>();
+
+		for(int i = 0; i < itemPairs.size(); i++){
+			System.out.println("Op: "+itemPairs.get(i).getOp()+"---------------");
+			if(predSuccRule(itemPairs.get(i), itemModelPairs.get(i), coverItem)){
+				//if(termInOutRule(itemPairs.get(i), itemModelPairs.get(i), board)){
+					SucceedItemPairs.add(itemPairs.get(i));
+					SucceedModelPairs.add(itemModelPairs.get(i));
+					System.out.println("op :"+itemPairs.get(i).getOp()+"OK!!");
+				/*}else{ //
+					System.out.println("op :"+itemPairs.get(i).getOp()+"NG!!"); //
+				} //*/
+			}
+			/*if(itemPairs.size()!=0){
+				ArrayList<SchedulerItem> SucceedItemPairs = new ArrayList<SchedulerItem>();
+				ArrayList<SchedulerItemModel> SucceedModelPairs = new ArrayList<SchedulerItemModel>();
+				for(int i = 0; i < itemPairs.size(); i++){
+					if(predSuccRule(itemPairs.get(i), itemModelPairs.get(i))){
+						if(termInOutRule(itemPairs.get(i), itemModelPairs.get(i), board)){
+							SucceedItemPairs.add(itemPairs.get(i));
+							SucceedModelPairs.add(itemModelPairs.get(i));
+						}
+					}
+					if(SucceedItemPairs.size() < 1){
+						instNum = 0;
+					}else if(SucceedItemPairs.size() == 1){
+						mapping.put(SucceedItemPairs.get(0), SucceedModelPairs.get(0));
+					}
+				}
+			}else{
+				instNum = 0;
+				break;
+			}*/
+		}
+		return mapping.size();
+	}
+
 	private Hashtable<Integer, SequencerState> genStatemachine(SchedulerBoard board, HardwareResource resource, Hashtable<Integer, SequencerState> returnTable, Hashtable<HDLVariable, HDLInstance> callStackMap){
 		HDLSequencer seq = hm.newSequencer(board.getName() + "_method");
 		IdGen id = new IdGen("S");
@@ -1421,6 +1682,34 @@ public class SchedulerInfoCompiler {
 			if(slot.hasBranchOp() || slot.getNextStep().length > 1 || slot.getLatency() > 0) continue;
 			if(slot.getStepId() == 0) continue;
 			states.get(slot.getStepId()).addStateTransit(states.get(slot.getNextStep()[0]));
+		}
+
+		//isMatchIp(board, ALTFP_SQRT32.coverItem);
+		isMatchIp(board, ALTFP_SQRT32.coverItem);
+
+		//int altfpSqrtStartNum = isMatchIpOp(board, ALTFP_SQRT32.op);
+		int altfpExpStartNum = isMatchIpOp(board, ALTFP_EXP32.op);
+		int altfpAbsStartNum = isMatchIpOp(board, ALTFP_ABS32.op);
+		int altfpSqrtStartNum = -1;
+
+		if(altfpExpStartNum != -1){
+			replaceIpOp(board, altfpExpStartNum, ALTFP_EXP32.op, Op.ALTFP_EXP32);
+			System.out.println("------------------------------------------------");
+			System.out.println("プロジェクトに ALTFP_EXP IPコアを");
+			System.out.println("altfp_exp32_ipというファイル名で追加してください");
+			System.out.println("------------------------------------------------");
+		}else if(altfpSqrtStartNum != -1){
+			replaceIpOp(board, altfpSqrtStartNum, ALTFP_SQRT32.op, Op.ALTFP_SQRT32);
+			System.out.println("------------------------------------------------");
+			System.out.println("プロジェクトに ALTFP_SQRT IPコアを");
+			System.out.println("altfp_sqrt32_ipというファイル名で追加してください");
+			System.out.println("------------------------------------------------");
+		}else if(altfpAbsStartNum != -1){
+			replaceIpOp(board, altfpAbsStartNum, ALTFP_ABS32.op, Op.ALTFP_ABS32);
+			System.out.println("------------------------------------------------");
+			System.out.println("プロジェクトに ALTFP_ABS IPコアを");
+			System.out.println("altfp_abs32_ipというファイル名で追加してください");
+			System.out.println("------------------------------------------------");
 		}
 
 		for(SchedulerSlot slot: board.getSlots()){
@@ -1587,6 +1876,10 @@ public class SchedulerInfoCompiler {
 					case MOD64 :
 					case FADD32 :
 					case FSUB32 :
+					//命令の追加
+					case ALTFP_SQRT32 :
+					case ALTFP_EXP32 :
+					case ALTFP_ABS32 :
 					case FMUL32 :
 					case FDIV32 :
 					case FADD64 :
@@ -1639,10 +1932,10 @@ public class SchedulerInfoCompiler {
 					*/
 						states.get(slot.getStepId()).addStateTransit(states.get(slot.getNextStep()[0]));
 					/*
-					  if(item.isBranchOp()){
-					  }else{
-					  s.addStateTransit(states[item.getStepId()+1]);
-					  }
+						if(item.isBranchOp()){
+						}else{
+						s.addStateTransit(states[item.getStepId()+1]);
+						}
 					*/
 						//s.addStateTransit(states[item.getBranchId()[0]]);
 						//s.addStateTransit(states.get(item.getSlot().getNextStep()[0]));
@@ -1703,17 +1996,15 @@ public class SchedulerInfoCompiler {
 					a.setAssign(methodIdleState, not_stack_bottom, dec);
 				}
 			}
-
 		}
-
 		return states;
 	}
 
 	private HDLInstance newInstModule(String mName, String uName){
 		Manager.SynthesijerModuleInfo info = Manager.INSTANCE.searchHDLModuleInfo(mName);
 		HDLInstance inst = hm.newModuleInstance(info.getHDLModule(), uName);
-		inst.getSignalForPort("clk").setAssign(null, hm.getSysClk().getSignal());
-		inst.getSignalForPort("reset").setAssign(null, hm.getSysReset().getSignal());
+			inst.getSignalForPort("clk").setAssign(null, hm.getSysClk().getSignal());
+			inst.getSignalForPort("reset").setAssign(null, hm.getSysReset().getSignal());
 		return inst;
 	}
 
@@ -1742,6 +2033,19 @@ public class SchedulerInfoCompiler {
 					resource.div64.getSignalForPort("b").setResetValue(HDLUtils.newValue(1, 64));
 				}
 				return resource.div64;
+			}
+			//命令の追加
+			case ALTFP_SQRT32:{
+				if(resource.altfp_sqrt32 == null) resource.altfp_sqrt32 = newInstModule("ALTFP_SQRT32", "u_synthesijer_altfp_sqrt32");
+				return resource.altfp_sqrt32;
+			}
+			case ALTFP_EXP32:{
+				if(resource.altfp_exp32 == null) resource.altfp_exp32 = newInstModule("ALTFP_EXP32", "u_synthesijer_altfp_exp32");
+				return resource.altfp_exp32;
+			}
+			case ALTFP_ABS32:{
+				if(resource.altfp_abs32 == null) resource.altfp_abs32 = newInstModule("ALTFP_ABS32", "u_synthesijer_altfp_abs32");
+				return resource.altfp_abs32;
 			}
 			case FADD32:{
 				if(resource.fadd32 == null) resource.fadd32 = newInstModule("FADD32", "u_synthesijer_fadd32" + "_" + name);

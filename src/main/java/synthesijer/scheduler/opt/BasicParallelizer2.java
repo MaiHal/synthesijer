@@ -177,6 +177,10 @@ public class BasicParallelizer2 implements SchedulerInfoOptimizer{
 			case CONTINUE:
 			case FADD32:
 			case FSUB32:
+			//命令の追加
+			case ALTFP_SQRT32:
+			case ALTFP_EXP32:
+			case ALTFP_ABS32:
 			case FMUL32:
 			case FDIV32:
 			case FADD64:

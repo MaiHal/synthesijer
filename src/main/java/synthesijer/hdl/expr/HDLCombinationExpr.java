@@ -23,16 +23,12 @@ public class HDLCombinationExpr implements HDLExpr {
         this.uid = uid;
         this.op = op;
         this.args = args;
-        System.out.println("最新のuid: "+uid+", op: "+op+", args: "+args);
         for (HDLExpr expr : args) {
             if (expr == null)
                 throw new RuntimeException("An argument of HDLCombinationExpr is null.");
         }
-        // System.out.println(this);
         HDLType type = decideExprType(op, this.args);
         result = m.newSignal(String.format("tmp_%04d", uid), type, HDLSignal.ResourceKind.WIRE, this, true);
-
-        System.out.println("result: "+result);
     }
 
     public HDLType getType() {
@@ -113,9 +109,6 @@ public class HDLCombinationExpr implements HDLExpr {
 
     private HDLType decideExprType(HDLOp op, HDLExpr[] args) {
         if (op.isInfix()) {
-            // signedが返ってくる
-            System.out.println("オペ"+op);
-            System.out.println(getPriorType(args[0].getType(), args[1].getType()));
             return getPriorType(args[0].getType(), args[1].getType());
         } else if (op.isCompare()) {
             return HDLPrimitiveType.genBitType();

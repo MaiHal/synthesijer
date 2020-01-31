@@ -114,7 +114,9 @@ public class HDLModule implements HDLTree, SynthesijerComponent{
 			sysClk = newPort(sysClkName, HDLPort.DIR.IN, HDLPrimitiveType.genBitType());
 		}
 		if(syncFlag){
-			sysReset = newPort(sysResetName, HDLPort.DIR.IN, HDLPrimitiveType.genBitType());
+			if(sysResetName != ""){
+				sysReset = newPort(sysResetName, HDLPort.DIR.IN, HDLPrimitiveType.genBitType());
+			}
 		}
 	}
 
@@ -126,6 +128,10 @@ public class HDLModule implements HDLTree, SynthesijerComponent{
 	 */
 	public HDLModule(String name, String sysClkName, String sysResetName){
 		this(name, sysClkName, sysResetName, true);
+	}
+
+	public HDLModule(String name, String sysClkName){
+		this(name, sysClkName, "", true);
 	}
 
 	/**

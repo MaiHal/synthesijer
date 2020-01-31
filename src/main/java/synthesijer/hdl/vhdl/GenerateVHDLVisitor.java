@@ -1,6 +1,8 @@
 package synthesijer.hdl.vhdl;
 
 import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.List;
 
 import synthesijer.Constant;
 import synthesijer.SynthesijerUtils;
@@ -56,7 +58,48 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 		HDLUtils.println(dest, offset, ")");
 	}
 
+	private void genProcess(int offset, HDLSignal[] o){
+		HDLUtils.println(dest, offset, String.format("process (clk)"));
+		HDLUtils.println(dest, offset, "begin");
+		String[] s = new String[6];
+			offset += 2;
+				for(HDLSignal hs : GenerateVHDLDefVisitor.usingSignals){
+					if(hs.isRegister()){
+						for(String cn : GenerateVHDLDefVisitor.compNames){
+							if(hs.getName().contains(cn)){
+								if(hs.getType().getVHDL().contains("vector")){
+									s[0] = hs.getName();
+								}else{
+									s[2] = hs.getName();
+								}
+							}else{
+								if(hs.getName().contains("return")){
+									s[4] = hs.getName();
+								}else{
+									s[1] = hs.getName();
+								}
+							}
+						}
+					}else{
+						if(hs.getType().getVHDL().contains("vector")){
+							s[5] = hs.getName();
+						}else{
+							s[3] = hs.getName();
+						}
+					}
+				}
+
+				HDLUtils.println(dest, offset, String.format("%s <= %s;", s[0], s[1]));
+				HDLUtils.println(dest, offset, String.format("%s <= '1';", s[2]));
+				HDLUtils.println(dest, offset, String.format("if %s = '1' then", s[3]));
+				HDLUtils.println(dest, offset+2, String.format("%s <= %s;", s[4], s[5]));
+				HDLUtils.println(dest, offset, "end if;");
+			offset -= 2;
+		HDLUtils.println(dest, offset, "end process;");
+	}
+
 	private void genPortMap(HDLInstance o){
+		// インスタンス部のportmap文字列作成
 		HDLUtils.println(dest, offset, String.format("port map("));
 		String sep = "";
 		for(HDLInstance.PortPair pair: o.getPairs()){
@@ -67,6 +110,7 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 					SynthesijerUtils.warn(o.getModule().getName() + " does not have system clock, but sub-module requires system clock");
 					SynthesijerUtils.warn("system clock of sub-module is remained as open, so the sub-module will not work well.");
 				}else{
+					// clkのport
 					HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), o.getModule().getSysClkPairItem().getName()));
 				}
 			}else if(o.getSubModule().getSysResetPairItem() != null && pair.port.getName().equals(o.getSubModule().getSysResetPairItem().getName())){
@@ -75,10 +119,11 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 					SynthesijerUtils.warn(o.getModule().getName() + " does not have system reset, but sub-module requires system reset");
 					SynthesijerUtils.warn("system reset of sub-module is remained as open, so the sub-module will not work well.");
 				}else{
+					// resetのport
 					HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), o.getModule().getSysResetPairItem().getName()));
 				}
 			}else{
-				HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), pair.item.getName()));
+					HDLUtils.print(dest, offset+2, String.format("%s => %s", pair.port.getName(), pair.item.getName()));
 			}
 			sep = "," + Constant.BR;
 		}
@@ -88,6 +133,7 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 
 	@Override
 	public void visitHDLInstance(HDLInstance o) {
+		// インスタンス部の文字列作成
 		HDLUtils.println(dest, offset, String.format("inst_%s : %s", o.getName(), o.getSubModule().getName()));
 		if(o.getSubModule().getParameters().length > 0){
 			genGenericMap(o);
@@ -104,26 +150,10 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 
 	@Override
 	public void visitHDLModule(HDLModule o) {
-		// library import
-		HDLUtils.println(dest, offset, String.format("library IEEE;"));
-		HDLUtils.println(dest, offset, String.format("use IEEE.std_logic_1164.all;"));
-		HDLUtils.println(dest, offset, String.format("use IEEE.numeric_std.all;"));
-		HDLUtils.nl(dest);
-
-		HDLModule.LibrariesInfo[] libraries = o.getLibraries();
-		for(HDLModule.LibrariesInfo lib: libraries){
-			HDLUtils.println(dest, offset, String.format("library " + lib.libName + ";"));
-			for(String s: lib.useName){
-				HDLUtils.println(dest, offset, String.format("use " + s + ";"));
-			}
-			HDLUtils.nl(dest);
-		}
-
 		// entity
 		o.accept(new GenerateVHDLDefVisitor(dest, offset));
-
-		// architecture body
 		HDLUtils.println(dest, offset, String.format("begin"));
+		// architecture body
 		HDLUtils.nl(dest);
 		for(HDLPort p: o.getPorts()){
 			offset += 2;
@@ -131,32 +161,19 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 			offset -= 2;
 		}
 		HDLUtils.nl(dest);
-		HDLUtils.println(dest, offset+2, "-- expressions");
-		for(HDLExpr expr : o.getExprs()){
-			offset += 2;
-			expr.accept(this);
-			offset -= 2;
-		}
+
+		offset += 2;
+		genProcess(offset, o.getSignals());
+		offset -= 2;
+
 		HDLUtils.nl(dest);
-		HDLUtils.println(dest, offset+2, "-- sequencers");
-		for(HDLSequencer m: o.getSequencers()){
-			offset += 2;
-			m.accept(this);
-			offset -= 2;
-		}
-		HDLUtils.nl(dest);
-		for(HDLSignal s: o.getSignals()){
-			offset += 2;
-			s.accept(this);
-			offset -= 2;
-		}
-		HDLUtils.nl(dest);
+
+		// インスタンス生成とportmap出力の呼び出し元
 		for(HDLInstance i: o.getModuleInstances()){
 			offset += 2;
 			i.accept(this);
 			offset -= 2;
 		}
-		HDLUtils.nl(dest);
 		HDLUtils.println(dest, offset, String.format("end RTL;"));
 	}
 
@@ -166,11 +183,12 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 		if(o.getDir() == HDLPort.DIR.INOUT){
 			return;
 		}else if(o.isOutput()){
-			HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getName(), o.getSignal().getName()));
+			if(o.getName().contains("return")) HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getName(), o.getSignal().getName()));
 		}else{
-			HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getSignal().getName(), o.getName()));
+			//HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getSignal().getName(), o.getName()));
 		}
-		o.getSignal().accept(this);
+		//ここはクロック考慮してから。
+		//o.getSignal().accept(this);
 	}
 
 	@Override
@@ -339,10 +357,10 @@ public class GenerateVHDLVisitor implements HDLTreeVisitor{
 	}
 
 	private void genAsyncProcess(HDLSignal o, int offset){
-		/*
-		  if(o.getConditions().length == 1){
-		  HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getName(), adjustTypeFor(o, o.getConditions()[0].getValue())));
-		  }else if(o.getConditions().length > 1){
+		/* 元からコメントアウト
+			if(o.getConditions().length == 1){
+			HDLUtils.println(dest, offset, String.format("%s <= %s;", o.getName(), adjustTypeFor(o, o.getConditions()[0].getValue())));
+			}else if(o.getConditions().length > 1){
 		*/
 		if(o.getConditions().length > 0){
 			String sep = "if";

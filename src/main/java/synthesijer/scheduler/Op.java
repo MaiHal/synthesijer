@@ -5,6 +5,10 @@ import synthesijer.ast.type.PrimitiveTypeKind;
 
 public enum Op {
 
+  //命令の追加
+	ALTFP_SQRT32(1),
+	ALTFP_EXP32(1),
+	ALTFP_ABS32(1),
 	METHOD_ENTRY(true),
 	METHOD_EXIT,
 	ASSIGN,
@@ -168,6 +172,7 @@ public enum Op {
 				else return ADD;
 			}
 			case MINUS: {
+				//ここは直してね
 				if(isDouble(lhs) || isDouble(rhs)) return FSUB64;
 				else if(isFloat(lhs) || isFloat(rhs)) return FSUB32;
 				else return SUB;
@@ -351,6 +356,10 @@ public enum Op {
 			case "COND" : return COND;
 			case "FADD32" : return FADD32;
 			case "FSUB32" : return FSUB32;
+			//命令の追加
+			case "ALTFP_SQRT32" : return ALTFP_SQRT32;
+			case "ALTFP_EXP32" : return ALTFP_EXP32;
+			case "ALTFP_ABS32" : return ALTFP_ABS32;
 			case "FMUL32" : return FMUL32;
 			case "FDIV32" : return FDIV32;
 			case "FADD64" : return FADD64;

@@ -2,6 +2,7 @@ package synthesijer.scheduler;
 
 import java.util.Hashtable;
 import java.util.HashMap;
+import java.util.ArrayList;
 
 import synthesijer.ast.Type;
 import synthesijer.ast.type.PrimitiveTypeKind;
@@ -43,6 +44,12 @@ public class SchedulerItem {
 	private int[] branchIDs;
 
 	private SchedulerSlot slot;
+
+	private ArrayList<SchedulerItem> predecessor = new ArrayList<SchedulerItem>();
+
+	private ArrayList<SchedulerItem> successor = new ArrayList<SchedulerItem>();
+
+	private int id;
 
 	/**
 	 *
@@ -111,6 +118,30 @@ public class SchedulerItem {
 		return getSlot().getStepId();
 	}
 
+	public void addPred(SchedulerItem pred){
+		this.predecessor.add(pred);
+	}
+
+	public void addSucc(SchedulerItem succ){
+		this.successor.add(succ);
+	}
+
+	public ArrayList<SchedulerItem> getPred(){
+		return this.predecessor;
+	}
+
+	public ArrayList<SchedulerItem> getSucc(){
+		return this.successor;
+	}
+
+	public void setId(int i){
+		this.id = i;
+	}
+
+	public int getId(){
+		return this.id;
+	}
+
 	/*
 	 * public void setStepId(int id){ this.stepID = id; if(op.isBranch ==
 	 * false){ branchIDs = new int[]{id + 1}; } }
@@ -156,7 +187,7 @@ public class SchedulerItem {
 		this.dest = v;
 	}
 
-	private String srcInfo() {
+	public String srcInfo() {
 		if (src == null)
 			return "";
 		String s = "";
@@ -170,7 +201,11 @@ public class SchedulerItem {
 		return s;
 	}
 
-	private String destInfo() {
+	public Operand srcVariableOpernad(){
+		return src[0];
+	}
+
+	public String destInfo() {
 		if (dest == null)
 			return "";
 		return dest.info();
