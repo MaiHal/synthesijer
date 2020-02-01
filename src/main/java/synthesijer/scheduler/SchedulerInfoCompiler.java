@@ -1514,25 +1514,14 @@ public class SchedulerInfoCompiler {
 		return result;
 	}
 
-	private boolean termInOutRule(SchedulerItem verItem, SchedulerItemModel model, SchedulerBoard board){
+	private boolean termInOutRule(SchedulerItem item, SchedulerItemModel model){
 		boolean result = false;
-		/*boolean result = false;
-		int sucNum = 0;
-		if(verItem.getDestOperand() != null){
-			for(SchedulerSlot slot: board.getSlots()){
-				for(SchedulerItem item: slot.getItems()){
-					String srcInfo = item.srcInfo();
-					if(srcInfo.contains(verItem.getDestOperand().getName())){
-						sucNum += 1;
-					}
-				}
+		// predecessorの数が等しいかどうか
+		if(model.getPred().length == item.getPred().size()){
+			if(model.getSucc().length == item.getSucc().size()){
+				result = true;
 			}
 		}
-		if(sucNum == model.getVariableOperandModelSucc()){
-			result = true;
-		}
-		return result;
-		*/
 		return result;
 	}
 
@@ -1614,42 +1603,23 @@ public class SchedulerInfoCompiler {
 		}
 		/*int instNum = coverItem.size();
 		List<String> operandList = new ArrayList<String>();*/
-		ArrayList<SchedulerItem> SucceedItemPairs = new ArrayList<SchedulerItem>();
-		ArrayList<SchedulerItemModel> SucceedModelPairs = new ArrayList<SchedulerItemModel>();
+		ArrayList<SchedulerItem> passedItemPairs = new ArrayList<SchedulerItem>();
+		ArrayList<SchedulerItemModel> passedModelPairs = new ArrayList<SchedulerItemModel>();
 		Hashtable<SchedulerItem, SchedulerItemModel> mapping = new Hashtable<>();
 
 		for(int i = 0; i < itemPairs.size(); i++){
-			System.out.println("Op: "+itemPairs.get(i).getOp()+"---------------");
 			if(predSuccRule(itemPairs.get(i), itemModelPairs.get(i), coverItem)){
-				//if(termInOutRule(itemPairs.get(i), itemModelPairs.get(i), board)){
-					SucceedItemPairs.add(itemPairs.get(i));
-					SucceedModelPairs.add(itemModelPairs.get(i));
+				System.out.println("Op: "+itemPairs.get(i).getOp()+"---------------");
+				if(termInOutRule(itemPairs.get(i), itemModelPairs.get(i))){
+					passedItemPairs.add(itemPairs.get(i));
+					passedModelPairs.add(itemModelPairs.get(i));
 					System.out.println("op :"+itemPairs.get(i).getOp()+"OK!!");
-				/*}else{ //
-					System.out.println("op :"+itemPairs.get(i).getOp()+"NG!!"); //
-				} //*/
-			}
-			/*if(itemPairs.size()!=0){
-				ArrayList<SchedulerItem> SucceedItemPairs = new ArrayList<SchedulerItem>();
-				ArrayList<SchedulerItemModel> SucceedModelPairs = new ArrayList<SchedulerItemModel>();
-				for(int i = 0; i < itemPairs.size(); i++){
-					if(predSuccRule(itemPairs.get(i), itemModelPairs.get(i))){
-						if(termInOutRule(itemPairs.get(i), itemModelPairs.get(i), board)){
-							SucceedItemPairs.add(itemPairs.get(i));
-							SucceedModelPairs.add(itemModelPairs.get(i));
-						}
-					}
-					if(SucceedItemPairs.size() < 1){
-						instNum = 0;
-					}else if(SucceedItemPairs.size() == 1){
-						mapping.put(SucceedItemPairs.get(0), SucceedModelPairs.get(0));
-					}
 				}
-			}else{
-				instNum = 0;
-				break;
-			}*/
+			}
 		}
+		/*if(newRule(passedItemPairs, passedModelPairs)){
+			mapping.put()
+		}*/
 		return mapping.size();
 	}
 
