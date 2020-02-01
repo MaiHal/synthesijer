@@ -1436,30 +1436,6 @@ public class SchedulerInfoCompiler {
 		}
 	}
 
-	private int isMatchIpOp(SchedulerBoard board, ArrayList<Op> op){
-		int id = 0;
-		int c = 0;
-		int startNum = -1;
-
-		for(SchedulerSlot slot: board.getSlots()){
-			for(SchedulerItem item: slot.getItems()){
-				if(c <= op.size()-1){
-					if(item.getOp() == op.get(c)){
-						if(startNum == -1){
-							startNum = id;
-						}
-						c += 1;
-					}else{
-						startNum = -1;
-						c = 0;
-					}
-				}
-				id += 1;
-			}
-		}
-		return startNum;
-	}
-
 	private boolean predSuccRule(SchedulerItem item, SchedulerItemModel model, ArrayList<SchedulerItemModel> coverItem){
 		boolean result = true;
 		// predecessorが等しいかどうか
@@ -1470,10 +1446,8 @@ public class SchedulerInfoCompiler {
 					continue;
 				}else{
 					result = false;
-					//System.out.println("モデルの先行節: "+coverItem.get(mpId).getOp());
 				}
 				for(SchedulerItem p : item.getPred()){
-					//System.out.println("先行節: "+p.getOp());
 					if(coverItem.get(mpId).getOp() == p.getOp()){
 						result = true;
 						break;
@@ -1495,10 +1469,8 @@ public class SchedulerInfoCompiler {
 						continue;
 					}else{
 						result = false;
-						//System.out.println("モデルの後続節: "+coverItem.get(msId).getOp());
 					}
 					for(SchedulerItem s : item.getSucc()){
-						//System.out.println("後続節: "+s.getOp());
 						if(coverItem.get(msId).getOp() == s.getOp()){
 							result = true;
 							break;
@@ -1551,8 +1523,6 @@ public class SchedulerInfoCompiler {
 		for(SchedulerSlot slot: board.getSlots()){
 			for(SchedulerItem item: slot.getItems()){
 				if(i > start){
-					//System.out.println("検索オペランド: "+item.getOp());
-					//System.out.println("ソース:"+item.srcInfo());
 					if(item.srcInfo().contains(",")){
 						String[] src = item.srcInfo().split(",");
 						for(String s : src){
@@ -1562,14 +1532,12 @@ public class SchedulerInfoCompiler {
 							if(dest.equals(s)){
 								currentItem.addPred(item);
 								item.addSucc(currentItem);
-								//System.out.println("先行節に追加:"+s);
 							}
 						}
 					}else{
 						if(dest.equals(item.srcInfo())){
 							currentItem.addPred(item);
 							item.addSucc(currentItem);
-							//System.out.println("先行節に追加:"+item.srcInfo());
 						}
 					}
 				}
@@ -1578,9 +1546,11 @@ public class SchedulerInfoCompiler {
 		}
 	}
 
+	int startNum;
+
 	private int vfMatch(SchedulerBoard board, ArrayList<SchedulerItemModel> coverItem, int s){
 		if(s == coverItem.size()){
-			return coverItem.size();
+			return startNum;
 		}else{
 			// ペアを作成
 			ArrayList<SchedulerItem> itemPairs = new ArrayList<>();
@@ -1598,7 +1568,6 @@ public class SchedulerInfoCompiler {
 			for(int i = 0; i < itemPairs.size(); i++){
 				if(predSuccRule(itemPairs.get(i), coverItem.get(s), coverItem)){
 					psPassedItemPairs.add(itemPairs.get(i));
-					System.out.println("Op: "+coverItem.get(s).getOp()+"---------------");
 				}
 			}
 			if(psPassedItemPairs.size() > 1){
@@ -1608,19 +1577,25 @@ public class SchedulerInfoCompiler {
 					}
 				}
 			}else if(psPassedItemPairs.size() == 1){
-				System.out.println("op :"+coverItem.get(s).getOp()+"OK!!");
+				if(s == 0){
+					startNum = psPassedItemPairs.get(0).getId();
+				}
 				return vfMatch(board, coverItem, s+1);
 			}
 			if(tioPassedItemPairs.size() > 1){
 				if(newRule(tioPassedItemPairs, coverItem.get(s))){
-					System.out.println("op :"+coverItem.get(s).getOp()+"OK!!");
+					if(s == 0){
+						startNum = psPassedItemPairs.get(0).getId();
+					}
 					return vfMatch(board, coverItem, s+1);
 				}
 			}else if(tioPassedItemPairs.size() == 1){
-				System.out.println("op :"+coverItem.get(s).getOp()+"OK!!");
+				if(s == 0){
+					startNum = psPassedItemPairs.get(0).getId();
+				}
 				return vfMatch(board, coverItem, s+1);
 			}
-			return 0;
+			return -1;
 		}
 	}
 
@@ -1672,48 +1647,20 @@ public class SchedulerInfoCompiler {
 		int isMatchSqrt32 = vfMatch(board, ALTFP_SQRT32.coverItem, 0);
 		int isMatchExp32 = vfMatch(board, ALTFP_EXP32.coverItem, 0);
 		int isMatchAbs32 = vfMatch(board, ALTFP_ABS32.coverItem, 0);
-		if(isMatchExp32 != 0){
-			//replaceIpOp(board, altfpExpStartNum, ALTFP_EXP32.op, Op.ALTFP_EXP32);
+		if(isMatchExp32 != -1){
+			replaceIpOp(board, isMatchExp32, ALTFP_EXP32.op, Op.ALTFP_EXP32);
 			System.out.println("------------------------------------------------");
 			System.out.println("プロジェクトに ALTFP_EXP IPコアを");
 			System.out.println("altfp_exp32_ipというファイル名で追加してください");
 			System.out.println("------------------------------------------------");
-		}else if(isMatchSqrt32 != 0){
-			//replaceIpOp(board, altfpSqrtStartNum, ALTFP_SQRT32.op, Op.ALTFP_SQRT32);
+		}else if(isMatchSqrt32 != -1){
+			replaceIpOp(board, isMatchSqrt32, ALTFP_SQRT32.op, Op.ALTFP_SQRT32);
 			System.out.println("------------------------------------------------");
 			System.out.println("プロジェクトに ALTFP_SQRT IPコアを");
 			System.out.println("altfp_sqrt32_ipというファイル名で追加してください");
 			System.out.println("------------------------------------------------");
-		}else if(isMatchAbs32 != 0){
-			//replaceIpOp(board, altfpAbsStartNum, ALTFP_ABS32.op, Op.ALTFP_ABS32);
-			System.out.println("------------------------------------------------");
-			System.out.println("プロジェクトに ALTFP_ABS IPコアを");
-			System.out.println("altfp_abs32_ipというファイル名で追加してください");
-			System.out.println("------------------------------------------------");
-		}
-
-
-		//int altfpSqrtStartNum = isMatchIpOp(board, ALTFP_SQRT32.op);
-		//int altfpExpStartNum = isMatchIpOp(board, ALTFP_EXP32.op);
-		//int altfpAbsStartNum = isMatchIpOp(board, ALTFP_ABS32.op);
-		int altfpSqrtStartNum = -1;
-		int altfpExpStartNum = -1;
-		int altfpAbsStartNum = -1;
-
-		if(altfpExpStartNum != -1){
-			replaceIpOp(board, altfpExpStartNum, ALTFP_EXP32.op, Op.ALTFP_EXP32);
-			System.out.println("------------------------------------------------");
-			System.out.println("プロジェクトに ALTFP_EXP IPコアを");
-			System.out.println("altfp_exp32_ipというファイル名で追加してください");
-			System.out.println("------------------------------------------------");
-		}else if(altfpSqrtStartNum != -1){
-			replaceIpOp(board, altfpSqrtStartNum, ALTFP_SQRT32.op, Op.ALTFP_SQRT32);
-			System.out.println("------------------------------------------------");
-			System.out.println("プロジェクトに ALTFP_SQRT IPコアを");
-			System.out.println("altfp_sqrt32_ipというファイル名で追加してください");
-			System.out.println("------------------------------------------------");
-		}else if(altfpAbsStartNum != -1){
-			replaceIpOp(board, altfpAbsStartNum, ALTFP_ABS32.op, Op.ALTFP_ABS32);
+		}else if(isMatchAbs32 != -1){
+			replaceIpOp(board, isMatchAbs32, ALTFP_ABS32.op, Op.ALTFP_ABS32);
 			System.out.println("------------------------------------------------");
 			System.out.println("プロジェクトに ALTFP_ABS IPコアを");
 			System.out.println("altfp_abs32_ipというファイル名で追加してください");
