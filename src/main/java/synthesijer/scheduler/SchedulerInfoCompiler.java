@@ -6,7 +6,7 @@ import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Optional;
-import java.util.Collections;
+import java.util.Arrays;
 
 import synthesijer.CompileState;
 import synthesijer.IdentifierGenerator;
@@ -1624,8 +1624,7 @@ public class SchedulerInfoCompiler {
 		}
 	}
 
-	private void isMatchIp(SchedulerBoard board, ArrayList<SchedulerItemModel> coverItem){
-		// predecessorとsuccessorを追加
+	private void callSetPredSucc(SchedulerBoard board){
 		int count = 0;
 		for(SchedulerSlot slot: board.getSlots()){
 			for(SchedulerItem item: slot.getItems()){
@@ -1636,24 +1635,6 @@ public class SchedulerInfoCompiler {
 				count += 1;
 			}
 		}
-
-		vfMatch(board, coverItem, 0);
-
-		// 見本構築のため確認
-		/*for(SchedulerSlot slot: board.getSlots()){
-			for(SchedulerItem item: slot.getItems()){
-				System.out.println("itemのop: "+item.getOp()+", id:"+item.getId());
-				System.out.println("itemのPred "+item.getPred().size()+" つ");
-				for(SchedulerItem pi : item.getPred()){
-					System.out.println("Predのid: "+(pi.getId()-3));
-				}
-				System.out.println("itemのSucc "+item.getSucc().size()+" つ");
-				for(SchedulerItem si : item.getSucc()){
-					System.out.println("Succのid: "+(si.getId()-3));
-				}
-			}
-		}*/
-		return;
 	}
 
 	private Hashtable<Integer, SequencerState> genStatemachine(SchedulerBoard board, HardwareResource resource, Hashtable<Integer, SequencerState> returnTable, Hashtable<HDLVariable, HDLInstance> callStackMap){
@@ -1687,9 +1668,30 @@ public class SchedulerInfoCompiler {
 			states.get(slot.getStepId()).addStateTransit(states.get(slot.getNextStep()[0]));
 		}
 
-		//isMatchIp(board, ALTFP_SQRT32.coverItem);
-		//isMatchIp(board, ALTFP_EXP32.coverItem);
-		isMatchIp(board, ALTFP_ABS32.coverItem);
+		callSetPredSucc(board);
+		int isMatchSqrt32 = vfMatch(board, ALTFP_SQRT32.coverItem, 0);
+		int isMatchExp32 = vfMatch(board, ALTFP_EXP32.coverItem, 0);
+		int isMatchAbs32 = vfMatch(board, ALTFP_ABS32.coverItem, 0);
+		if(isMatchExp32 != 0){
+			//replaceIpOp(board, altfpExpStartNum, ALTFP_EXP32.op, Op.ALTFP_EXP32);
+			System.out.println("------------------------------------------------");
+			System.out.println("プロジェクトに ALTFP_EXP IPコアを");
+			System.out.println("altfp_exp32_ipというファイル名で追加してください");
+			System.out.println("------------------------------------------------");
+		}else if(isMatchSqrt32 != 0){
+			//replaceIpOp(board, altfpSqrtStartNum, ALTFP_SQRT32.op, Op.ALTFP_SQRT32);
+			System.out.println("------------------------------------------------");
+			System.out.println("プロジェクトに ALTFP_SQRT IPコアを");
+			System.out.println("altfp_sqrt32_ipというファイル名で追加してください");
+			System.out.println("------------------------------------------------");
+		}else if(isMatchAbs32 != 0){
+			//replaceIpOp(board, altfpAbsStartNum, ALTFP_ABS32.op, Op.ALTFP_ABS32);
+			System.out.println("------------------------------------------------");
+			System.out.println("プロジェクトに ALTFP_ABS IPコアを");
+			System.out.println("altfp_abs32_ipというファイル名で追加してください");
+			System.out.println("------------------------------------------------");
+		}
+
 
 		//int altfpSqrtStartNum = isMatchIpOp(board, ALTFP_SQRT32.op);
 		//int altfpExpStartNum = isMatchIpOp(board, ALTFP_EXP32.op);
