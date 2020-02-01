@@ -1592,18 +1592,32 @@ public class SchedulerInfoCompiler {
 				}
 			}
 
-			ArrayList<SchedulerItem> passedItemPairs = new ArrayList<SchedulerItem>();
+			ArrayList<SchedulerItem> psPassedItemPairs = new ArrayList<SchedulerItem>();
+			ArrayList<SchedulerItem> tioPassedItemPairs = new ArrayList<SchedulerItem>();
 			Hashtable<SchedulerItem, SchedulerItemModel> mapping = new Hashtable<>();
 			for(int i = 0; i < itemPairs.size(); i++){
 				if(predSuccRule(itemPairs.get(i), coverItem.get(s), coverItem)){
+					psPassedItemPairs.add(itemPairs.get(i));
 					System.out.println("Op: "+coverItem.get(s).getOp()+"---------------");
-					if(termInOutRule(itemPairs.get(i), coverItem.get(s))){
-						passedItemPairs.add(itemPairs.get(i));
-						System.out.println("op :"+itemPairs.get(i).getOp()+"OK!!");
-					}
 				}
 			}
-			if(newRule(passedItemPairs, coverItem.get(s))){
+			if(psPassedItemPairs.size() > 1){
+				for(int i = 0; i < psPassedItemPairs.size(); i++){
+					if(termInOutRule(psPassedItemPairs.get(i), coverItem.get(s))){
+						tioPassedItemPairs.add(psPassedItemPairs.get(i));
+					}
+				}
+			}else if(psPassedItemPairs.size() == 1){
+				System.out.println("op :"+coverItem.get(s).getOp()+"OK!!");
+				return vfMatch(board, coverItem, s+1);
+			}
+			if(tioPassedItemPairs.size() > 1){
+				if(newRule(tioPassedItemPairs, coverItem.get(s))){
+					System.out.println("op :"+coverItem.get(s).getOp()+"OK!!");
+					return vfMatch(board, coverItem, s+1);
+				}
+			}else if(tioPassedItemPairs.size() == 1){
+				System.out.println("op :"+coverItem.get(s).getOp()+"OK!!");
 				return vfMatch(board, coverItem, s+1);
 			}
 			return 0;
