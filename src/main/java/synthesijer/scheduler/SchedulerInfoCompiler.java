@@ -6,6 +6,7 @@ import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Optional;
+import java.util.Collections;
 
 import synthesijer.CompileState;
 import synthesijer.IdentifierGenerator;
@@ -1558,7 +1559,43 @@ public class SchedulerInfoCompiler {
 		}
 	}
 
-	private int isMatchIp(SchedulerBoard board, ArrayList<SchedulerItemModel> coverItem){
+	private int vfMatch(SchedulerBoard board, ArrayList<SchedulerItemModel> coverItem, int s){
+		if(s == coverItem.size()){
+			return coverItem.size();
+		}else{
+			// ペアを作成
+			ArrayList<SchedulerItem> itemPairs = new ArrayList<>();
+			//Hashtable<SchedulerItemModel, SchedulerItem> candidatePairs = new Hashtable<>();
+			for(SchedulerSlot slot: board.getSlots()){
+				for(SchedulerItem item: slot.getItems()){
+					if(item.getOp() == coverItem.get(s).getOp()){
+						itemPairs.add(item);
+						//System.out.println("ci"+ci.getOp()+", item"+item.getOp());
+					}
+				}
+			}
+
+			ArrayList<SchedulerItem> passedItemPairs = new ArrayList<SchedulerItem>();
+			//ArrayList<SchedulerItemModel> passedModelPairs = new ArrayList<SchedulerItemModel>();
+			Hashtable<SchedulerItem, SchedulerItemModel> mapping = new Hashtable<>();
+			for(int i = 0; i < itemPairs.size(); i++){
+				if(predSuccRule(itemPairs.get(i), coverItem.get(s), coverItem)){
+					System.out.println("Op: "+coverItem.get(s).getOp()+"---------------");
+					if(termInOutRule(itemPairs.get(i), coverItem.get(s))){
+						passedItemPairs.add(itemPairs.get(i));
+						System.out.println("op :"+itemPairs.get(i).getOp()+"OK!!");
+						vfMatch(board, coverItem, s+1);
+					}
+				}
+			}
+			/*if(newRule(passedItemPairs, passedModelPairs)){
+				mapping.put()
+			}*/
+			return mapping.size();
+		}
+	}
+
+	private void isMatchIp(SchedulerBoard board, ArrayList<SchedulerItemModel> coverItem){
 		// predecessorとsuccessorを追加
 		int count = 0;
 		for(SchedulerSlot slot: board.getSlots()){
@@ -1570,6 +1607,8 @@ public class SchedulerInfoCompiler {
 				count += 1;
 			}
 		}
+
+		vfMatch(board, coverItem, 0);
 
 		// 見本構築のため確認
 		/*for(SchedulerSlot slot: board.getSlots()){
@@ -1585,42 +1624,7 @@ public class SchedulerInfoCompiler {
 				}
 			}
 		}*/
-
-		// ペアを作成
-		ArrayList<SchedulerItem> itemPairs = new ArrayList<>();
-		ArrayList<SchedulerItemModel> itemModelPairs = new ArrayList<>();
-		//Hashtable<SchedulerItem, SchedulerItemModel> candidatePairs = new Hashtable<>();
-		for(SchedulerItemModel ci : coverItem){
-			for(SchedulerSlot slot: board.getSlots()){
-				for(SchedulerItem item: slot.getItems()){
-					if(item.getOp() == ci.getOp()){
-						itemPairs.add(item);
-						itemModelPairs.add(ci);
-						//System.out.println("ci"+ci.getOp()+", item"+item.getOp());
-					}
-				}
-			}
-		}
-		/*int instNum = coverItem.size();
-		List<String> operandList = new ArrayList<String>();*/
-		ArrayList<SchedulerItem> passedItemPairs = new ArrayList<SchedulerItem>();
-		ArrayList<SchedulerItemModel> passedModelPairs = new ArrayList<SchedulerItemModel>();
-		Hashtable<SchedulerItem, SchedulerItemModel> mapping = new Hashtable<>();
-
-		for(int i = 0; i < itemPairs.size(); i++){
-			if(predSuccRule(itemPairs.get(i), itemModelPairs.get(i), coverItem)){
-				System.out.println("Op: "+itemPairs.get(i).getOp()+"---------------");
-				if(termInOutRule(itemPairs.get(i), itemModelPairs.get(i))){
-					passedItemPairs.add(itemPairs.get(i));
-					passedModelPairs.add(itemModelPairs.get(i));
-					System.out.println("op :"+itemPairs.get(i).getOp()+"OK!!");
-				}
-			}
-		}
-		/*if(newRule(passedItemPairs, passedModelPairs)){
-			mapping.put()
-		}*/
-		return mapping.size();
+		return;
 	}
 
 	private Hashtable<Integer, SequencerState> genStatemachine(SchedulerBoard board, HardwareResource resource, Hashtable<Integer, SequencerState> returnTable, Hashtable<HDLVariable, HDLInstance> callStackMap){
