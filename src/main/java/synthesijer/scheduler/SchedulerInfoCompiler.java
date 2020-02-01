@@ -1688,13 +1688,15 @@ public class SchedulerInfoCompiler {
 		}
 
 		//isMatchIp(board, ALTFP_SQRT32.coverItem);
-		isMatchIp(board, ALTFP_EXP32.coverItem);
+		//isMatchIp(board, ALTFP_EXP32.coverItem);
+		isMatchIp(board, ALTFP_ABS32.coverItem);
 
 		//int altfpSqrtStartNum = isMatchIpOp(board, ALTFP_SQRT32.op);
 		//int altfpExpStartNum = isMatchIpOp(board, ALTFP_EXP32.op);
-		int altfpAbsStartNum = isMatchIpOp(board, ALTFP_ABS32.op);
+		//int altfpAbsStartNum = isMatchIpOp(board, ALTFP_ABS32.op);
 		int altfpSqrtStartNum = -1;
 		int altfpExpStartNum = -1;
+		int altfpAbsStartNum = -1;
 
 		if(altfpExpStartNum != -1){
 			replaceIpOp(board, altfpExpStartNum, ALTFP_EXP32.op, Op.ALTFP_EXP32);
