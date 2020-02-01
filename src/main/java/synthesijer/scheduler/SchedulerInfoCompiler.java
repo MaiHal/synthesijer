@@ -1526,6 +1526,25 @@ public class SchedulerInfoCompiler {
 		return result;
 	}
 
+	private boolean newRule(ArrayList<SchedulerItem> items, SchedulerItemModel model){
+		boolean result = false;
+		int ic = 0;
+		int mc = 0;
+		// 新しいノードの数が等しいかどうか
+		for(SchedulerItem item : items){
+			if(item.getPred().size() == 0 && item.getSucc().size() == 0){
+				ic += 1;
+			}
+		}
+		if(model.getPred().length == 0 && model.getSucc().length == 0){
+			mc += 1;
+		}
+		if(ic == mc){
+			result = true;
+		}
+		return result;
+	}
+
 	private void searchPredSucc(SchedulerBoard board, SchedulerItem currentItem, int start){
 		int i = 0;
 		String dest = currentItem.destInfo();
@@ -1565,18 +1584,15 @@ public class SchedulerInfoCompiler {
 		}else{
 			// ペアを作成
 			ArrayList<SchedulerItem> itemPairs = new ArrayList<>();
-			//Hashtable<SchedulerItemModel, SchedulerItem> candidatePairs = new Hashtable<>();
 			for(SchedulerSlot slot: board.getSlots()){
 				for(SchedulerItem item: slot.getItems()){
 					if(item.getOp() == coverItem.get(s).getOp()){
 						itemPairs.add(item);
-						//System.out.println("ci"+ci.getOp()+", item"+item.getOp());
 					}
 				}
 			}
 
 			ArrayList<SchedulerItem> passedItemPairs = new ArrayList<SchedulerItem>();
-			//ArrayList<SchedulerItemModel> passedModelPairs = new ArrayList<SchedulerItemModel>();
 			Hashtable<SchedulerItem, SchedulerItemModel> mapping = new Hashtable<>();
 			for(int i = 0; i < itemPairs.size(); i++){
 				if(predSuccRule(itemPairs.get(i), coverItem.get(s), coverItem)){
@@ -1584,14 +1600,13 @@ public class SchedulerInfoCompiler {
 					if(termInOutRule(itemPairs.get(i), coverItem.get(s))){
 						passedItemPairs.add(itemPairs.get(i));
 						System.out.println("op :"+itemPairs.get(i).getOp()+"OK!!");
-						vfMatch(board, coverItem, s+1);
 					}
 				}
 			}
-			/*if(newRule(passedItemPairs, passedModelPairs)){
-				mapping.put()
-			}*/
-			return mapping.size();
+			if(newRule(passedItemPairs, coverItem.get(s))){
+				return vfMatch(board, coverItem, s+1);
+			}
+			return 0;
 		}
 	}
 
