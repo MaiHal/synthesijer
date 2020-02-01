@@ -50,6 +50,10 @@ import synthesijer.lib.FMUL32;
 import synthesijer.lib.FMUL64;
 import synthesijer.lib.FSUB32;
 import synthesijer.lib.FSUB64;
+//命令の追加
+import synthesijer.scheduler.ALTFP_SQRT32;
+import synthesijer.scheduler.ALTFP_EXP32;
+import synthesijer.scheduler.ALTFP_ABS32;
 import synthesijer.lib.INPUT1;
 import synthesijer.lib.INPUT16;
 import synthesijer.lib.INPUT32;
@@ -144,6 +148,9 @@ public enum Manager {
 		addHDLModule("FSUB32", null, new FSUB32(), false);
 		addHDLModule("FMUL32", null, new FMUL32(), false);
 		addHDLModule("FDIV32", null, new FDIV32(), false);
+		addHDLModule("ALTFP_SQRT32", null, new ALTFP_SQRT32(), false);
+		addHDLModule("ALTFP_EXP32", null, new ALTFP_EXP32(), false);
+		addHDLModule("ALTFP_ABS32", null, new ALTFP_ABS32(), false);
 		// floating 64-bit
 		addHDLModule("FADD64", null, new FADD64(), false);
 		addHDLModule("FSUB64", null, new FSUB64(), false);

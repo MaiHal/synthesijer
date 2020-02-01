@@ -21,7 +21,6 @@ public class SSAGraph{
   ArrayList<SSAGraphNode> ssa_nodes;  
 
   public SSAGraph(ControlFlowGraph cg){
-    //System.out.println("スロット数: "+cg.slots.length);
     ssa_nodes = buildAll(cg.slots);
     toString(ssa_nodes);
   }
@@ -87,7 +86,6 @@ public class SSAGraph{
       switch(n.type){
         case "operator":
           System.out.println("OP: "+n.operator+" ->");
-          //System.out.println(n.dest);
           break;
         case "operand":
           System.out.println(n.variable_name+" : "+n.value+" ->");

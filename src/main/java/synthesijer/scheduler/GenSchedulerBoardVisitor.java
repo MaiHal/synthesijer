@@ -108,6 +108,8 @@ public class GenSchedulerBoardVisitor implements SynthesijerAstVisitor{
 
 	boolean constantPropMode = false;
 
+	private ArrayList<String> methodKind = new ArrayList<String>();
+
 	public GenSchedulerBoardVisitor(SchedulerInfo info, IdentifierGenerator idGen) {
 		this.info = info;
 		this.parent = null;
@@ -723,6 +725,7 @@ class GenSchedulerBoardExprVisitor implements SynthesijerExprVisitor{
 		Operand lhs = stepIn(o.getLhs());
 		Operand rhs = stepIn(o.getRhs());
 
+		// ここもある
 		Op op = Op.get(o.getOp(), lhs, rhs);
 		Type type = lhs.getType();
 

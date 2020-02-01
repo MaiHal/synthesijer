@@ -35,7 +35,6 @@ public class SSAConverter implements SchedulerInfoOptimizer{
 	}
 
 	public String getKey(){
-		//System.out.println("SSA化したよ！");
 		return "ssa_converter";
 	}
 
