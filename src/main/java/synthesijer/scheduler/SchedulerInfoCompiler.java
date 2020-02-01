@@ -1465,7 +1465,7 @@ public class SchedulerInfoCompiler {
 		// predecessorが等しいかどうか
 		if(model.getPred().length != 0){
 			for(int mpId : model.getPred()){
-				if(mpId == -1){
+				if(mpId < 0){
 					result = true;
 					continue;
 				}else{
@@ -1490,7 +1490,7 @@ public class SchedulerInfoCompiler {
 		if(result){
 			if(model.getSucc().length != 0){
 				for(int msId : model.getSucc()){
-					if(msId == -1){
+					if(msId < 0){
 						result = true;
 						continue;
 					}else{
@@ -1688,12 +1688,13 @@ public class SchedulerInfoCompiler {
 		}
 
 		//isMatchIp(board, ALTFP_SQRT32.coverItem);
-		isMatchIp(board, ALTFP_SQRT32.coverItem);
+		isMatchIp(board, ALTFP_EXP32.coverItem);
 
 		//int altfpSqrtStartNum = isMatchIpOp(board, ALTFP_SQRT32.op);
-		int altfpExpStartNum = isMatchIpOp(board, ALTFP_EXP32.op);
+		//int altfpExpStartNum = isMatchIpOp(board, ALTFP_EXP32.op);
 		int altfpAbsStartNum = isMatchIpOp(board, ALTFP_ABS32.op);
 		int altfpSqrtStartNum = -1;
+		int altfpExpStartNum = -1;
 
 		if(altfpExpStartNum != -1){
 			replaceIpOp(board, altfpExpStartNum, ALTFP_EXP32.op, Op.ALTFP_EXP32);
